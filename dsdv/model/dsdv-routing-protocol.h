@@ -43,8 +43,6 @@
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/output-stream-wrapper.h"
 
-#include "ns3/mobility-model.h"
-
 namespace ns3 {
 namespace dsdv {
 
@@ -68,42 +66,6 @@ public:
   ~RoutingProtocol ();
   virtual void
   DoDispose ();
-
-
-  //ADD: 添加函数，从数据包中获得正确的带方向的速度，用于更新路由表
-  //ADD: 转换速度符号的两个函数，sign用来记录速度是否为负数，
-  //0：都不是负数   1：x轴为负    2：y轴为负    3：z轴为负
-  //4：xy为负数   5：xz为负数   6：yz为负   7：全都是负数
-
-  Vector GetRightVelocity(uint16_t vx, uint16_t vy, uint16_t vz, uint16_t sign){
-    if(sign == 0){ return Vector(vx, vy, vz);}
-    else if(sign == 1){ return Vector(-vx, vy, vz);}
-    else if(sign == 2){ return Vector(vx, -vy, vz);}
-    else if(sign == 3){ return Vector(vx, vy, -vz);}
-    else if(sign == 4){ return Vector(-vx, -vy, vz);}
-    else if(sign == 5){ return Vector(-vx, vy, -vz);}
-    else if(sign == 6){ return Vector(vx, -vy, -vz);}
-    else if(sign == 7){ return Vector(-vx, -vy, -vz);}
-    else{
-      std::cout<<"sign is wrong!!!\n";
-      return Vector(999, 999, 999);
-    }
-
-  }
-
-  //ADD: 添加函数，获得速度对应的符号，这样就可以把路由表中的速度绝对值放入数据包中
-  uint16_t SetRightVelocity(int16_t vx, int16_t vy, int16_t vz){
-    uint16_t sign = 9;
-    if(vx >= 0 && vy >= 0 && vz >= 0) sign = 0;
-    if(vx < 0 && vy >= 0 && vz >= 0) sign = 1;
-    if(vx >= 0 && vy < 0 && vz >= 0) sign = 2;
-    if(vx >= 0 && vy >= 0 && vz < 0) sign = 3;
-    if(vx < 0 && vy < 0 && vz >= 0) sign = 4;
-    if(vx < 0 && vy >= 0 && vz < 0) sign = 5;
-    if(vx >= 0 && vy < 0 && vz < 0) sign = 6;
-    if(vx < 0 && vy < 0 && vz < 0 ) sign =7;
-    return sign; 
-  }
 
   // From Ipv4RoutingProtocol
   Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);

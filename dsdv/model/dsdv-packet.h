@@ -133,16 +133,6 @@ public:
     return m_dstSeqNo;
   }
 private:
-  //ADD:
-  uint16_t m_x;
-  uint16_t m_y;
-  uint16_t m_z;
-  int16_t m_vx;
-  int16_t m_vy;
-  int16_t m_vz;
-  uint16_t m_sign; //一共8种情况 每个位置的速度都有正负两种情况
-  uint16_t m_timestamp;
-
   Ipv4Address m_dst; ///< Destination IP Address
   uint32_t m_hopCount; ///< Number of Hops
   uint32_t m_dstSeqNo; ///< Destination Sequence Number

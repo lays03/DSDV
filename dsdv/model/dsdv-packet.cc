@@ -67,43 +67,22 @@ DsdvHeader::GetInstanceTypeId () const
 uint32_t
 DsdvHeader::GetSerializedSize () const
 {
-  //ADD: 新加了8个uint16_t的字段，一共是 16bit / 8 = 2byte 2*8=16byte
-  // return 12;
-  return 28;
+  return 12;
 }
 
 void
 DsdvHeader::Serialize (Buffer::Iterator i) const
 {
-  //ADD: 序列化位置信息和速度信息
-  i.WriteHtonU16 (m_x);
-  i.WriteHtonU16 (m_y);
-  i.WriteHtonU16 (m_z);
-  i.WriteHtonU16 (m_vx);
-  i.WriteHtonU16 (m_vy);
-  i.WriteHtonU16 (m_vz);
-  i.WriteHtonU16 (m_sign);
-  i.WriteHtonU16 (m_timestamp);
-
   WriteTo (i, m_dst);
   i.WriteHtonU32 (m_hopCount);
   i.WriteHtonU32 (m_dstSeqNo);
+
 }
 
 uint32_t
 DsdvHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
-
-  //ADD: 反序列化位置信息和速度信息
-  m_x = i.ReadNtohU16 ();
-  m_y = i.ReadNtohU16 ();
-  m_z = i.ReadNtohU16 ();
-  m_vx = i.ReadNtohU16 ();
-  m_vy = i.ReadNtohU16 ();
-  m_vz = i.ReadNtohU16 ();
-  m_sign = i.ReadNtohU16 ();
-  m_timestamp = i.ReadNtohU16 ();
 
   ReadFrom (i, m_dst);
   m_hopCount = i.ReadNtohU32 ();
