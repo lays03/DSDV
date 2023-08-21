@@ -665,6 +665,14 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
             {
               NS_LOG_DEBUG ("Received New Route!");
               RoutingTableEntry newEntry (
+                //Add:
+                dsdvHeader.GetX(),
+                dsdvHeader.GetY(),
+                dsdvHeader.GetZ(),
+                dsdvHeader.GetVX(),
+                dsdvHeader.GetVY(),
+                dsdvHeader.GetVZ(),
+                dsdvHeader.GetTimestamp(),
                 /*device=*/ dev, 
                 /*dst=*/dsdvHeader.GetDst (), 
                 /*seqno=*/dsdvHeader.GetDstSeqno (),
@@ -1005,6 +1013,9 @@ RoutingProtocol::SendPeriodicUpdate ()
       return;
     }
   NS_LOG_FUNCTION (m_mainAddress << " is sending out its periodic update");
+
+  //首先定义一个header，放入对应的信息。再通过AddHeader()将包头添加到packet上
+  //遍历节点的每一个socket，使用sendTo将packet广播
   for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator j = m_socketAddresses.begin (); j
        != m_socketAddresses.end (); ++j)
     {
@@ -1013,6 +1024,16 @@ RoutingProtocol::SendPeriodicUpdate ()
       Ipv4InterfaceAddress iface = j->second;
       // cout<<"SendPeriodicUpdate iface:"<<iface<<endl;
       Ptr<Packet> packet = Create<Packet> ();
+
+      //Add:
+      Ptr<MobilityModel> MM = m_ipv4->GetObject<MobilityModel> ();
+      Vector myPos = MM->GetPosition();
+      Vector myVel = MM->GetVelocity();
+      int16_t vx = (int16_t)myVel.x;
+      int16_t vy = (int16_t)myVel.y;
+      int16_t vz = (int16_t)myVel.z;
+      uint16_t sign = SetRightVelocity(vx, vy, vz);
+
       for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i)
         {
           DsdvHeader dsdvHeader;
@@ -1021,6 +1042,17 @@ RoutingProtocol::SendPeriodicUpdate ()
             {
               RoutingTableEntry ownEntry;
                // 自己的IP地址
+
+              //Add
+              dsdvHeader.SetX((uint16_t)myPos.x);
+              dsdvHeader.SetX((uint16_t)myPos.y);
+              dsdvHeader.SetX((uint16_t)myPos.z);
+              dsdvHeader.SetVX(abs(vx));
+              dsdvHeader.SetVX(abs(vy));
+              dsdvHeader.SetVX(abs(vz));
+              dsdvHeader.SetSign(sign);
+              dsdvHeader.SetTimestamp(Simulator::Now ().ToInteger(Time::S));
+              
               dsdvHeader.SetDst (m_ipv4->GetAddress (1,0).GetLocal ());
               dsdvHeader.SetDstSeqno (i->second.GetSeqNo () + 2);
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
@@ -1031,6 +1063,16 @@ RoutingProtocol::SendPeriodicUpdate ()
             }
           else
             {
+              //Add
+              dsdvHeader.SetX((uint16_t)myPos.x);
+              dsdvHeader.SetX((uint16_t)myPos.y);
+              dsdvHeader.SetX((uint16_t)myPos.z);
+              dsdvHeader.SetVX(abs(vx));
+              dsdvHeader.SetVX(abs(vy));
+              dsdvHeader.SetVX(abs(vz));
+              dsdvHeader.SetSign(sign);
+              dsdvHeader.SetTimestamp(Simulator::Now ().ToInteger(Time::S));
+
               dsdvHeader.SetDst (i->second.GetDestination ());
               dsdvHeader.SetDstSeqno ((i->second.GetSeqNo ()));
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
@@ -1076,6 +1118,7 @@ RoutingProtocol::SendPeriodicUpdate ()
 void
 RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 {
+  DsdvHeader dsdvHeader;
   NS_ASSERT (ipv4 != 0);
   NS_ASSERT (m_ipv4 == 0);
   m_ipv4 = ipv4;
@@ -1085,6 +1128,8 @@ RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   NS_ASSERT (m_lo != 0);
   // Remember lo route
   RoutingTableEntry rt (
+    dsdvHeader.GetX(), dsdvHeader.GetY(), dsdvHeader.GetZ(),
+    dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetTimestamp(),
     /*device=*/ m_lo,  /*dst=*/
     Ipv4Address::GetLoopback (), /*seqno=*/
     0,
@@ -1102,6 +1147,7 @@ RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 void
 RoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {
+  DsdvHeader dsdvHeader;
   NS_LOG_FUNCTION (this << m_ipv4->GetAddress (i, 0).GetLocal ()
                         << " interface is up");
   Ptr<Ipv4L3Protocol> l3 = m_ipv4->GetObject<Ipv4L3Protocol> ();
@@ -1121,7 +1167,9 @@ RoutingProtocol::NotifyInterfaceUp (uint32_t i)
   m_socketAddresses.insert (std::make_pair (socket,iface));
   // Add local broadcast record to the routing table
   Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
-  RoutingTableEntry rt (/*device=*/ dev, /*dst=*/ iface.GetBroadcast (), /*seqno=*/ 0,/*iface=*/ iface,/*hops=*/ 0,
+  RoutingTableEntry rt (dsdvHeader.GetX(), dsdvHeader.GetY(), dsdvHeader.GetZ(),
+    dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetTimestamp(),
+    /*device=*/ dev, /*dst=*/ iface.GetBroadcast (), /*seqno=*/ 0,/*iface=*/ iface,/*hops=*/ 0,
                                     /*next hop=*/ iface.GetBroadcast (), /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
   m_routingTable.AddRoute (rt);
   if (m_mainAddress == Ipv4Address ())
@@ -1156,6 +1204,7 @@ void
 RoutingProtocol::NotifyAddAddress (uint32_t i,
                                    Ipv4InterfaceAddress address)
 {
+  DsdvHeader dsdvHeader;
   NS_LOG_FUNCTION (this << " interface " << i << " address " << address);
   Ptr<Ipv4L3Protocol> l3 = m_ipv4->GetObject<Ipv4L3Protocol> ();
   if (!l3->IsUp (i))
@@ -1179,7 +1228,9 @@ RoutingProtocol::NotifyAddAddress (uint32_t i,
       socket->SetAllowBroadcast (true);
       m_socketAddresses.insert (std::make_pair (socket,iface));
       Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
-      RoutingTableEntry rt (/*device=*/ dev, /*dst=*/ iface.GetBroadcast (),/*seqno=*/ 0, /*iface=*/ iface,/*hops=*/ 0,
+      RoutingTableEntry rt (dsdvHeader.GetX(), dsdvHeader.GetY(), dsdvHeader.GetZ(),
+        dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetTimestamp(),
+        /*device=*/ dev, /*dst=*/ iface.GetBroadcast (),/*seqno=*/ 0, /*iface=*/ iface,/*hops=*/ 0,
                                         /*next hop=*/ iface.GetBroadcast (), /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
       m_routingTable.AddRoute (rt);
     }

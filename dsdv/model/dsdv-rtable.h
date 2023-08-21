@@ -59,6 +59,15 @@ public:
   /**
    * c-tor
    *
+   * Add:
+   * \param x
+   * \param y
+   * \param z
+   * \param vx
+   * \param vy
+   * \param vz
+   * \param timestamp
+   * 
    * \param dev the net device
    * \param dst the destination IP address
    * \param seqNo the sequence number
@@ -82,10 +91,10 @@ public:
   uint16_t GetX() const{ return m_x;}
 
   void Sety(uint16_t y){ m_y = y;}
-  uint16_t Gety() const{ return m_y;}
+  uint16_t GetY() const{ return m_y;}
 
   void Setz(uint16_t z){ m_z = z;}
-  uint16_t Getz() const{ return m_z;}
+  uint16_t GetZ() const{ return m_z;}
 
   void SetVX(int16_t vx){ m_vx = vx;}
   int16_t GetVX() const{ return m_vx;}
@@ -98,6 +107,7 @@ public:
 
   void SetTimestamp(uint16_t timestamp){ m_timestamp = timestamp;}
   uint16_t GetTimestamp() const{ return m_timestamp;}
+
 
 
   /**

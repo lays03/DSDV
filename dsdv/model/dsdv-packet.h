@@ -78,6 +78,33 @@ public:
   virtual uint32_t Deserialize (Buffer::Iterator start);
   virtual void Print (std::ostream &os) const;
 
+
+
+    //ADD
+  void SetX(uint16_t x){ m_x = x;}
+  uint16_t GetX() const{ return m_x;}
+
+  void Sety(uint16_t y){ m_y = y;}
+  uint16_t GetY() const{ return m_y;}
+
+  void Setz(uint16_t z){ m_z = z;}
+  uint16_t GetZ() const{ return m_z;}
+
+  void SetVX(int16_t vx){ m_vx = vx;}
+  int16_t GetVX() const{ return m_vx;}
+
+  void SetVy(int16_t vy){ m_vy = vy;}
+  int16_t GetVY() const{ return m_vy;}
+
+  void SetVZ(int16_t vz){ m_vz = vz;}
+  int16_t GetVZ() const{ return m_vz;}
+
+  void SetTimestamp(uint16_t timestamp){ m_timestamp = timestamp;}
+  uint16_t GetTimestamp() const{ return m_timestamp;}
+
+  void SetSign(uint16_t sign){ m_sign = sign;}
+  uint16_t GetSign() const{return m_sign;}
+
   /**
    * Set destination address
    * \param destination the destination IPv4 address
