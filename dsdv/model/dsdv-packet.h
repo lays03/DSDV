@@ -58,14 +58,26 @@ namespace dsdv {
 class DsdvHeader : public Header
 {
 public:
+
+//ADD:
   /**
    * Constructor
-   *
+   * ADD
+   * \param x
+   * \param y
+   * \param z
+   * \param vx
+   * \param vy
+   * \param vz
+   * \param sign
+   * \param timestamp
    * \param dst destination IP address
    * \param hopcount hop count
    * \param dstSeqNo destination sequence number
    */
-  DsdvHeader (Ipv4Address dst = Ipv4Address (), uint32_t hopcount = 0, uint32_t dstSeqNo = 0);
+  DsdvHeader (uint16_t x = 0, uint16_t y = 0, uint16_t z = 0,
+    int16_t vx = 0, int16_t vy = 0, int16_t vz = 0, uint16_t sign = 0, uint16_t timestamp = 0,
+    Ipv4Address dst = Ipv4Address (), uint32_t hopcount = 0, uint32_t dstSeqNo = 0);
   virtual ~DsdvHeader ();
   /**
    * \brief Get the type ID.

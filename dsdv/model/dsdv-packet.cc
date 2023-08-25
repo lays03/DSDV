@@ -37,8 +37,19 @@ namespace dsdv {
 
 NS_OBJECT_ENSURE_REGISTERED (DsdvHeader);
 
-DsdvHeader::DsdvHeader (Ipv4Address dst, uint32_t hopCount, uint32_t dstSeqNo)
-  : m_dst (dst),
+//ADD: dsdvheader里面加了我新增的位置和速度
+DsdvHeader::DsdvHeader (uint16_t x, uint16_t y, uint16_t z,
+  int16_t vx, int16_t vy, int16_t vz, uint16_t sign, uint16_t timestamp,
+  Ipv4Address dst, uint32_t hopCount, uint32_t dstSeqNo)
+  : m_x (x),
+    m_y (y),
+    m_z (z),
+    m_vx (vx),
+    m_vy (vy),
+    m_vz (vz),
+    m_sign (sign),
+    m_timestamp (timestamp),
+    m_dst (dst),
     m_hopCount (hopCount),
     m_dstSeqNo (dstSeqNo)
 {

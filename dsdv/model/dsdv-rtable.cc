@@ -218,12 +218,30 @@ RoutingTableEntry::Print (Ptr<OutputStreamWrapper> stream, Time::Unit unit /*= T
 
   *os << std::resetiosflags (std::ios::adjustfield) << std::setiosflags (std::ios::left);
 
-  std::ostringstream dest, gw, iface, ltime, stime;
+  std::ostringstream x, y, z, vx, vy, vz, timestamp, dest, gw, iface, ltime, stime;
+
+  //ADD:
+  // std::ostringstream x, y, z, vx, vy, vz, timestamp;
+  x << GetX();
+  y << GetY();
+  z << GetZ();
+  vx << GetVX();
+  vy << GetVY();
+  vz << GetVZ();
+  timestamp << GetTimestamp();
   dest << m_ipv4Route->GetDestination ();
   gw << m_ipv4Route->GetGateway ();
   iface << m_iface.GetLocal ();
   ltime << std::setprecision (3) << (Simulator::Now () - m_lifeTime).As (unit);
   stime << m_settlingTime.As (unit);
+
+  *os << std::setw (16) << x.str ();
+  *os << std::setw (16) << y.str ();
+  *os << std::setw (16) << z.str ();
+  *os << std::setw (16) << vx.str ();
+  *os << std::setw (16) << vy.str ();
+  *os << std::setw (16) << vz.str ();
+  *os << std::setw (16) << timestamp.str ();
 
   *os << std::setw (16) << dest.str ();
   *os << std::setw (16) << gw.str ();
@@ -292,8 +310,14 @@ RoutingTable::Print (Ptr<OutputStreamWrapper> stream, Time::Unit unit /*= Time::
 
   *os << "\nDSDV Routing table\n";
   //ADD
-  *os << std::setw (16) << "x\t\ty\t\tz\t\tvx\t\tvy\t\tvz\t\ttimestamp\n";
-
+  // *os << std::setw (16) << "x\t\ty\t\tz\t\tvx\t\tvy\t\tvz\t\ttimestamp";
+  *os << std::setw (16) << "x";
+  *os << std::setw (16) << "y";
+  *os << std::setw (16) << "z";
+  *os << std::setw (16) << "vx";
+  *os << std::setw (16) << "vy";
+  *os << std::setw (16) << "vz";
+  *os << std::setw (16) << "timestamp";
   *os << std::setw (16) << "Destination";
   *os << std::setw (16) << "Gateway";
   *os << std::setw (16) << "Interface";

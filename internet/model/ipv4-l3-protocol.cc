@@ -422,7 +422,7 @@ Ipv4L3Protocol::AddIpv4Interface (Ptr<Ipv4Interface>interface)
 {
   NS_LOG_FUNCTION (this << interface);
   uint32_t index = m_interfaces.size ();
-  cout << "m_interfaces.size: " << index <<endl;
+  // cout << "m_interfaces.size: " << index <<endl;
   m_interfaces.push_back (interface);
   m_reverseInterfacesContainer[interface->GetDevice ()] = index;
   return index;
@@ -443,7 +443,7 @@ uint32_t
 Ipv4L3Protocol::GetNInterfaces (void) const
 {
   NS_LOG_FUNCTION (this);
-  cout << "size:" << m_interfaces.size() <<endl;
+  // cout << "size:" << m_interfaces.size() <<endl;
   return m_interfaces.size ();
 }
 
@@ -497,10 +497,10 @@ Ipv4L3Protocol::GetInterfaceForDevice (
   Ptr<const NetDevice> device) const
 {
   NS_LOG_FUNCTION (this << device);
-  cout << "device: "<< this << device << endl;
+  // cout << "device: "<< this << device << endl;
   Ipv4InterfaceReverseContainer::const_iterator iter = m_reverseInterfacesContainer.find (device);
-  cout << "iter.first:" << (*iter).first <<endl;
-  cout << "iter.second:" << (*iter).second <<endl;
+  // cout << "iter.first:" << (*iter).first <<endl;
+  // cout << "iter.second:" << (*iter).second <<endl;
 
   if (iter != m_reverseInterfacesContainer.end ())
     {
@@ -982,7 +982,7 @@ Ipv4L3Protocol::SendRealOut (Ptr<Ipv4Route> route,
     }
   Ptr<NetDevice> outDev = route->GetOutputDevice ();
    std::cout<<"outDev: "<<outDev<<std::endl;
-   std::cout<<GetNInterfaces()<<std::endl;
+   std::cout<<"GetNInterfaces(): "<<GetNInterfaces()<<std::endl;
 
   int32_t interface = GetInterfaceForDevice (outDev);
   // std::cout<<"返回的interface:"<<interface<<std::endl;

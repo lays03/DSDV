@@ -618,7 +618,8 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
   NS_LOG_FUNCTION (m_mainAddress << " received dsdv packet of size: " << packetSize
                                  << " and packet id: " << packet->GetUid ());
   uint32_t count = 0;
-  for (; packetSize > 0; packetSize = packetSize - 12)
+  //ADD 头部大小改了，改成28了，所以这里之前的12要改成28
+  for (; packetSize > 0; packetSize = packetSize - 28)
     {
       count = 0;
       DsdvHeader dsdvHeader, tempDsdvHeader;
@@ -949,7 +950,8 @@ RoutingProtocol::SendTriggeredUpdate ()
             }
         }
       // 只有数据包大小大于12才会转发，因为12是header的大小，小于12说明没有header
-      if (packet->GetSize () >= 12)
+       //ADD 头部大小改了，改成28了，所以这里之前的12要改成28
+      if (packet->GetSize () >= 28)
         {
           RoutingTableEntry temp2;
           m_routingTable.LookupRoute (m_ipv4->GetAddress (1, 0).GetBroadcast (), temp2);
