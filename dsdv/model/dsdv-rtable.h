@@ -90,16 +90,16 @@ public:
   void SetX(uint16_t x){ m_x = x;}
   uint16_t GetX() const{ return m_x;}
 
-  void Sety(uint16_t y){ m_y = y;}
+  void SetY(uint16_t y){ m_y = y;}
   uint16_t GetY() const{ return m_y;}
 
-  void Setz(uint16_t z){ m_z = z;}
+  void SetZ(uint16_t z){ m_z = z;}
   uint16_t GetZ() const{ return m_z;}
 
   void SetVX(int16_t vx){ m_vx = vx;}
   int16_t GetVX() const{ return m_vx;}
 
-  void SetVy(int16_t vy){ m_vy = vy;}
+  void SetVY(int16_t vy){ m_vy = vy;}
   int16_t GetVY() const{ return m_vy;}
 
   void SetVZ(int16_t vz){ m_vz = vz;}

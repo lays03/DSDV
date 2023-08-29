@@ -310,6 +310,15 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
   for (std::map<Ipv4Address, RoutingTableEntry>::iterator rmItr = removedAddresses.begin ();
        rmItr != removedAddresses.end (); ++rmItr)
     {
+      //ADD:
+      rmItr->second.SetX(rmItr->second.GetX());
+      rmItr->second.SetY(rmItr->second.GetY());
+      rmItr->second.SetZ(rmItr->second.GetX());
+      rmItr->second.SetVX(rmItr->second.GetVX());
+      rmItr->second.SetVY(rmItr->second.GetVY());
+      rmItr->second.SetVZ(rmItr->second.GetVZ());
+      rmItr->second.SetTimestamp(rmItr->second.GetTimestamp());
+
       rmItr->second.SetEntriesChanged (true);
       rmItr->second.SetSeqNo (rmItr->second.GetSeqNo () + 1);
       m_advRoutingTable.AddRoute (rmItr->second);
@@ -731,6 +740,15 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                   // 如果指标发生了变化，* *无论* *更新来自哪里，都要等待WST
                   if (dsdvHeader.GetHopCount () != advTableEntry.GetHop ())
                     {
+                      //ADD:
+                      advTableEntry.SetX(dsdvHeader.GetX());
+                      advTableEntry.SetY(dsdvHeader.GetY());
+                      advTableEntry.SetZ(dsdvHeader.GetZ());
+                      advTableEntry.SetVX(dsdvHeader.GetVX());
+                      advTableEntry.SetVY(dsdvHeader.GetVY());
+                      advTableEntry.SetVZ(dsdvHeader.GetVZ());
+                      advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
+                      
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
                       advTableEntry.SetLifeTime (Simulator::Now ());
                       advTableEntry.SetFlag (VALID);
@@ -754,6 +772,16 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                     {
                       // Received update with better seq number and same metric.
                       // 收到了更好的seq数和相同的度量更新。
+
+                      //ADD:
+                      advTableEntry.SetX(dsdvHeader.GetX());
+                      advTableEntry.SetY(dsdvHeader.GetY());
+                      advTableEntry.SetZ(dsdvHeader.GetZ());
+                      advTableEntry.SetVX(dsdvHeader.GetVX());
+                      advTableEntry.SetVY(dsdvHeader.GetVY());
+                      advTableEntry.SetVZ(dsdvHeader.GetVZ());
+                      advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
+
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
                       advTableEntry.SetLifeTime (Simulator::Now ());
                       advTableEntry.SetFlag (VALID);
@@ -776,6 +804,16 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       NS_LOG_DEBUG ("Canceling any existing timer to update route with same sequence number "
                                     "and better hop count");
                       m_advRoutingTable.ForceDeleteIpv4Event (dsdvHeader.GetDst ());
+
+                      //ADD:
+                      advTableEntry.SetX(dsdvHeader.GetX());
+                      advTableEntry.SetY(dsdvHeader.GetY());
+                      advTableEntry.SetZ(dsdvHeader.GetZ());
+                      advTableEntry.SetVX(dsdvHeader.GetVX());
+                      advTableEntry.SetVY(dsdvHeader.GetVY());
+                      advTableEntry.SetVZ(dsdvHeader.GetVZ());
+                      advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
+
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
                       advTableEntry.SetLifeTime (Simulator::Now ());
                       advTableEntry.SetFlag (VALID);
@@ -927,6 +965,16 @@ RoutingProtocol::SendTriggeredUpdate ()
           RoutingTableEntry temp = i->second;
           if ((i->second.GetEntriesChanged () == true) && (!m_advRoutingTable.AnyRunningEvent (temp.GetDestination ())))
             {
+              //ADD:
+              dsdvHeader.SetX(i->second.GetX());
+              dsdvHeader.SetY(i->second.GetY());
+              dsdvHeader.SetZ(i->second.GetZ());
+              dsdvHeader.SetVX(i->second.GetVX());
+              dsdvHeader.SetVY(i->second.GetVY());
+              dsdvHeader.SetVZ(i->second.GetVZ());
+              dsdvHeader.SetTimestamp(i->second.GetTimestamp());
+              dsdvHeader.SetSign(dsdvHeader.GetSign());
+
               dsdvHeader.SetDst (i->second.GetDestination ());
               dsdvHeader.SetDstSeqno (i->second.GetSeqNo ());
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
@@ -955,6 +1003,17 @@ RoutingProtocol::SendTriggeredUpdate ()
         {
           RoutingTableEntry temp2;
           m_routingTable.LookupRoute (m_ipv4->GetAddress (1, 0).GetBroadcast (), temp2);
+
+          //ADD:
+          dsdvHeader.SetX(temp2.GetX());
+          dsdvHeader.SetY(temp2.GetY());
+          dsdvHeader.SetZ(temp2.GetZ());
+          dsdvHeader.SetVX(temp2.GetVX());
+          dsdvHeader.SetVY(temp2.GetVY());
+          dsdvHeader.SetVZ(temp2.GetVZ());
+          dsdvHeader.SetTimestamp(temp2.GetTimestamp());
+          dsdvHeader.SetSign(dsdvHeader.GetSign());
+
           dsdvHeader.SetDst (m_ipv4->GetAddress (1, 0).GetLocal ());
           dsdvHeader.SetDstSeqno (temp2.GetSeqNo ());
           dsdvHeader.SetHopCount (temp2.GetHop () + 1);
@@ -1090,6 +1149,15 @@ RoutingProtocol::SendPeriodicUpdate ()
            != removedAddresses.end (); ++rmItr)
         {
           DsdvHeader removedHeader;
+          //ADD:
+          removedHeader.SetX(rmItr->second.GetX());
+          removedHeader.SetY(rmItr->second.GetY());
+          removedHeader.SetZ(rmItr->second.GetZ());
+          removedHeader.SetVX(rmItr->second.GetVX());
+          removedHeader.SetVY(rmItr->second.GetVY());
+          removedHeader.SetVZ(rmItr->second.GetVZ());
+          removedHeader.SetTimestamp(rmItr->second.GetTimestamp());
+
           removedHeader.SetDst (rmItr->second.GetDestination ());
           removedHeader.SetDstSeqno (rmItr->second.GetSeqNo () + 1);
           removedHeader.SetHopCount (rmItr->second.GetHop () + 1);
