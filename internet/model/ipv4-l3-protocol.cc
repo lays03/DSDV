@@ -443,7 +443,7 @@ uint32_t
 Ipv4L3Protocol::GetNInterfaces (void) const
 {
   NS_LOG_FUNCTION (this);
-  cout << "size:" << m_interfaces.size() <<endl;
+  cout << "m_interfaces.size" << m_interfaces.size() <<endl;
   return m_interfaces.size ();
 }
 
@@ -461,6 +461,7 @@ Ipv4L3Protocol::GetInterfaceForAddress (
         {
           if ((*i)->GetAddress (j).GetLocal () == address)
             {
+              cout<<"i: "<<i<<", interface: "<<interface<<endl;
               return interface;
             }
         }
