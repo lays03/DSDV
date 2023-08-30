@@ -278,6 +278,8 @@ RoutingProtocol::Start ()
 
 // 首先对路由表进行清理，删除掉过期的路由并将他们加入advRoutingTable，使用触发器更新。
 // 然后在新的路由表中查找到目的地的路由，如果有则返回，否则返回回环地址。
+
+// 当节点主动的发送数据包的时候会调用，该函数会返回到目的地的路由
 Ptr<Ipv4Route>
 RoutingProtocol::RouteOutput (Ptr<Packet> p,
                               const Ipv4Header &header,
@@ -286,11 +288,11 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
 {
   NS_LOG_FUNCTION (this << header << (oif ? oif->GetIfIndex () : 0));
 
-  if (!p)
+  if (!p) 
     {
       return LoopbackRoute (header,oif); // 为给定标头创建环回路由
     }
-  if (m_socketAddresses.empty ())
+  if (m_socketAddresses.empty ()) //如果socket是空
     {
       sockerr = Socket::ERROR_NOROUTETOHOST;
       NS_LOG_LOGIC ("No dsdv interfaces");
@@ -408,6 +410,8 @@ RoutingProtocol::DeferredRouteOutput (Ptr<const Packet> p,
     }
 }
 
+// 用来接收别人发过来的数据包，然后决定如何继续转发出去。
+// 返回的值是一个布尔值，如果Ipv4RoutingProtocol负责转发或者交付数据包，则为true，否则为false。
 bool
 RoutingProtocol::RouteInput (Ptr<const Packet> p,
                              const Ipv4Header &header,
