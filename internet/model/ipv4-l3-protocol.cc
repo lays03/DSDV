@@ -981,12 +981,15 @@ Ipv4L3Protocol::SendRealOut (Ptr<Ipv4Route> route,
       m_dropTrace (ipHeader, packet, DROP_NO_ROUTE, m_node->GetObject<Ipv4> (), 0);
       return;
     }
+  //先根据路由获取设备号
+  //根据设备号来获取接口的索引
+  //最后根据索引获取接口地址返回
   Ptr<NetDevice> outDev = route->GetOutputDevice ();
-  //  std::cout<<"outDev: "<<outDev<<std::endl;
+   std::cout<<"route->GetOutputDevice: "<<outDev<<std::endl;
   //  std::cout<<"GetNInterfaces(): "<<GetNInterfaces()<<std::endl;
 
   int32_t interface = GetInterfaceForDevice (outDev);
-  // std::cout<<"返回的interface:"<<interface<<std::endl;
+  std::cout<<"GetInterfaceForDevice (outDev): "<<interface<<std::endl;
 
   NS_ASSERT (interface >= 0);
   Ptr<Ipv4Interface> outInterface = GetInterface (interface);

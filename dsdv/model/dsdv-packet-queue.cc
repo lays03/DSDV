@@ -35,6 +35,8 @@
 #include "ns3/socket.h"
 #include "ns3/log.h"
 
+using namespace std;
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("DsdvPacketQueue");
@@ -51,6 +53,7 @@ bool
 PacketQueue::Enqueue (QueueEntry & entry)
 {
   NS_LOG_FUNCTION ("Enqueing packet destined for" << entry.GetIpv4Header ().GetDestination ());
+  cout << "Enqueing packet destined for" << entry.GetIpv4Header ().GetDestination () << endl;
   Purge ();
   uint32_t numPacketswithdst;
   for (std::vector<QueueEntry>::const_iterator i = m_queue.begin (); i
@@ -65,10 +68,12 @@ PacketQueue::Enqueue (QueueEntry & entry)
     }
   numPacketswithdst = GetCountForPacketsWithDst (entry.GetIpv4Header ().GetDestination ());
   NS_LOG_DEBUG ("Number of packets with this destination: " << numPacketswithdst);
+  cout << "Number of packets with this destination: " << numPacketswithdst << endl;
   /** For Brock Paper comparison*/
   if (numPacketswithdst >= m_maxLenPerDst || m_queue.size () >= m_maxLen)
     {
       NS_LOG_DEBUG ("Max packets reached for this destination. Not queuing any further packets");
+      cout << "Max packets reached for this destination. Not queuing any further packets" << endl;
       return false;
     }
   else
@@ -84,6 +89,7 @@ void
 PacketQueue::DropPacketWithDst (Ipv4Address dst)
 {
   NS_LOG_FUNCTION ("Dropping packet to " << dst);
+  cout << "Dropping packet to " << dst << endl;
   Purge ();
   for (std::vector<QueueEntry>::iterator i = m_queue.begin (); i
        != m_queue.end (); ++i)
@@ -101,7 +107,8 @@ PacketQueue::DropPacketWithDst (Ipv4Address dst)
 bool
 PacketQueue::Dequeue (Ipv4Address dst, QueueEntry & entry)
 {
-  NS_LOG_FUNCTION ("Dequeueing packet destined for" << dst);
+  NS_LOG_FUNCTION ("Dequeueing packet destined for " << dst);
+  cout << "Dequeueing packet destined for " << dst << endl;
   Purge ();
   for (std::vector<QueueEntry>::iterator i = m_queue.begin (); i != m_queue.end (); ++i)
     {
@@ -164,7 +171,7 @@ struct IsExpired
 };
 
 void
-PacketQueue::Purge ()
+PacketQueue::Purge () //清空队列？
 {
   // NS_LOG_DEBUG("Purging Queue");
   IsExpired pred;
@@ -174,6 +181,7 @@ PacketQueue::Purge ()
       if (pred (*i))
         {
           NS_LOG_DEBUG ("Dropping outdated Packets");
+          cout << "Dropping outdated Packets" << endl;
           Drop (*i, "Drop outdated packet ");
         }
     }

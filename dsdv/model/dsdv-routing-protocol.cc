@@ -1055,7 +1055,7 @@ RoutingProtocol::SendTriggeredUpdate ()
 // 更新m_routingTable中的数据
 void
 RoutingProtocol::SendPeriodicUpdate ()
-{
+{ 
   std::map<Ipv4Address, RoutingTableEntry> removedAddresses, allRoutes;
   m_routingTable.Purge (removedAddresses);
   MergeTriggerPeriodicUpdates ();
@@ -1376,22 +1376,67 @@ RoutingProtocol::Drop (Ptr<const Packet> packet,
 void
 RoutingProtocol::LookForQueuedPackets ()  
 {
+  cout << "Now is look for queue packets......" << endl;
   NS_LOG_FUNCTION (this);
   Ptr<Ipv4Route> route;
   std::map<Ipv4Address, RoutingTableEntry> allRoutes;
   m_routingTable.GetListOfAllRoutes (allRoutes);
+
+  //ADD:
+  for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i){
+    RoutingTableEntry rt;
+    rt = i->second;
+    cout << "Route: " << rt.GetRoute() << endl;
+    cout << "X: " << rt.GetX() << endl;
+      cout << "Y: " << rt.GetY() << endl;
+      cout << "Z: " << rt.GetX() << endl;
+      cout << "VX: " << rt.GetVX() << endl;
+      cout << "VY: " << rt.GetVY() << endl;
+      cout << "VZ: " << rt.GetVZ() << endl;
+      cout << "timestamp: " << rt.GetTimestamp() << endl;
+      cout << "Destination: " << rt.GetDestination() << endl;
+      cout << "Nexthop: " << rt.GetNextHop() << endl;
+      cout << "Interface: " << rt.GetInterface() << endl;
+      cout << "HopCount: " << rt.GetHop() << endl;
+      cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
+      cout << "SeqNum: " << rt.GetSeqNo() << endl;
+  }
+
+
+
   for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i)
     {
       RoutingTableEntry rt;
       rt = i->second;
       if (m_queue.Find (rt.GetDestination ()))
         {
+          //ADD
+      cout << endl;
+      cout << "X: " << rt.GetX() << endl;
+      cout << "Y: " << rt.GetY() << endl;
+      cout << "Z: " << rt.GetX() << endl;
+      cout << "VX: " << rt.GetVX() << endl;
+      cout << "VY: " << rt.GetVY() << endl;
+      cout << "VZ: " << rt.GetVZ() << endl;
+      cout << "timestamp: " << rt.GetTimestamp() << endl;
+      cout << "Route: " << rt.GetRoute() << endl;
+      cout << "Destination: " << rt.GetDestination() << endl;
+      cout << "Nexthop: " << rt.GetNextHop() << endl;
+      cout << "Interface: " << rt.GetInterface() << endl;
+      cout << "HopCount: " << rt.GetHop() << endl;
+      cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
+      cout << "SeqNum: " << rt.GetSeqNo() << endl;
+      cout<<"the old route->GetOutputDevice: "<<rt.GetRoute()->GetOutputDevice ()<<endl<<endl;
           if (rt.GetHop () == 1)
             {
               route = rt.GetRoute ();
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to neighboring destination "
                                                    << route->GetDestination ());
+              cout << "A route exists from " << route->GetSource ()
+                                                   << " to neighboring destination "
+                                                   << route->GetDestination () 
+                                                   << endl;
               NS_ASSERT (route != 0);
             }
           else
@@ -1399,9 +1444,34 @@ RoutingProtocol::LookForQueuedPackets ()
               RoutingTableEntry newrt;
               m_routingTable.LookupRoute (rt.GetNextHop (),newrt);
               route = newrt.GetRoute ();
+              cout << "the newrt: " << route << endl;
+              cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
+
+              //ADD
+      cout << endl;
+      cout << "X: " << newrt.GetX() << endl;
+      cout << "Y: " << newrt.GetY() << endl;
+      cout << "Z: " << newrt.GetX() << endl;
+      cout << "VX: " << newrt.GetVX() << endl;
+      cout << "VY: " << newrt.GetVY() << endl;
+      cout << "VZ: " << newrt.GetVZ() << endl;
+      cout << "timestamp: " << newrt.GetTimestamp() << endl;
+      cout << "Route: " << newrt.GetRoute() << endl;
+      cout << "Destination: " << newrt.GetDestination() << endl;
+      cout << "Nexthop: " << newrt.GetNextHop() << endl;
+      cout << "Interface: " << newrt.GetInterface() << endl;
+      cout << "HopCount: " << newrt.GetHop() << endl;
+      cout << "OutputDevice: " << newrt.GetOutputDevice() << endl;
+      cout << "SeqNum: " << newrt.GetSeqNo() << endl;
+
+
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to destination " << route->GetDestination () << " via "
                                                    << rt.GetNextHop ());
+              cout << "A route exists from " << route->GetSource ()
+                                                   << " to destination " << route->GetDestination () << " via "
+                                                   << rt.GetNextHop () 
+                                                   << endl;
               NS_ASSERT (route != 0);
             }
           SendPacketFromQueue (rt.GetDestination (),route);
@@ -1418,6 +1488,9 @@ void
 RoutingProtocol::SendPacketFromQueue (Ipv4Address dst,
                                       Ptr<Ipv4Route> route)
 {
+  cout << "Now is Send Packet from Queue......" << endl;
+
+
   NS_LOG_DEBUG (m_mainAddress << " is sending a queued packet to destination " << dst);
   QueueEntry queueEntry;
   if (m_queue.Dequeue (dst,queueEntry))
@@ -1437,6 +1510,7 @@ RoutingProtocol::SendPacketFromQueue (Ipv4Address dst,
       header.SetSource (route->GetSource ());
       header.SetTtl (header.GetTtl () + 1); // compensate extra TTL decrement by fake loopback routing
       ucb (route,p,header);
+      
       if (m_queue.GetSize () != 0 && m_queue.Find (dst))
         {
           Simulator::Schedule (MilliSeconds (m_uniformRandomVariable->GetInteger (0,100)),
