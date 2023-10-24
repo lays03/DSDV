@@ -88,13 +88,17 @@ RoutingTable::LookupRoute (Ipv4Address id,
 {
   if (m_ipv4AddressEntry.empty ())
     {
+      cout << "路由表是空的" << endl;
       return false;
     }
+  cout << "查找目的地为: " << id << "的路由条目" << endl;
   std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = m_ipv4AddressEntry.find (id);
   if (i == m_ipv4AddressEntry.end ())
     {
+      cout << "Entry.find 没找到啊" << endl;
       return false;
     }
+  cout << "Entry.find 找到了" << endl;
   rt = i->second;
   return true;
 }
@@ -138,11 +142,720 @@ RoutingTable::RoutingTableSize ()
   return m_ipv4AddressEntry.size ();
 }
 
+// 1.1  1.1   +1 +1
+RoutingTableEntry
+RoutingTable::fun1(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart + 1;
+  uint32_t dst2_third = dst_thirdPart + 1;
+  uint32_t nexthop2_second = nexthop_secondPart + 1;
+  uint32_t nexthop2_third = nexthop_thirdPart + 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+    
+  // cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 1.1  1.1   +1 不变
+RoutingTableEntry
+RoutingTable::fun2(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart + 1;
+  uint32_t dst2_third = dst_thirdPart + 1;
+  uint32_t nexthop2_second = nexthop_secondPart + 1;
+  uint32_t nexthop2_third = nexthop_thirdPart + 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/nexthop, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 1.1  1.1   不变 +1
+RoutingTableEntry
+RoutingTable::fun3(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart + 1;
+  uint32_t dst2_third = dst_thirdPart + 1;
+  uint32_t nexthop2_second = nexthop_secondPart + 1;
+  uint32_t nexthop2_third = nexthop_thirdPart + 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/dst, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 1.1  2.2   不变 -1
+RoutingTableEntry
+RoutingTable::fun4(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart + 1;
+  uint32_t dst2_third = dst_thirdPart + 1;
+  uint32_t nexthop2_second = nexthop_secondPart - 1;
+  uint32_t nexthop2_third = nexthop_thirdPart - 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/dst, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 1.1  2.2   +1 -1
+RoutingTableEntry
+RoutingTable::fun5(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart + 1;
+  uint32_t dst2_third = dst_thirdPart + 1;
+  uint32_t nexthop2_second = nexthop_secondPart - 1;
+  uint32_t nexthop2_third = nexthop_thirdPart - 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 1.1  2.2   +1 不变
+RoutingTableEntry
+RoutingTable::fun6(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart + 1;
+  uint32_t dst2_third = dst_thirdPart + 1;
+  uint32_t nexthop2_second = nexthop_secondPart - 1;
+  uint32_t nexthop2_third = nexthop_thirdPart - 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/nexthop, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 2.2  1.1   不变 +1
+RoutingTableEntry
+RoutingTable::fun7(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart - 1;
+  uint32_t dst2_third = dst_thirdPart - 1;
+  uint32_t nexthop2_second = nexthop_secondPart + 1;
+  uint32_t nexthop2_third = nexthop_thirdPart + 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/dst, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 2.2  1.1   -1 不变
+RoutingTableEntry
+RoutingTable::fun8(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart - 1;
+  uint32_t dst2_third = dst_thirdPart - 1;
+  uint32_t nexthop2_second = nexthop_secondPart + 1;
+  uint32_t nexthop2_third = nexthop_thirdPart + 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/nexthop, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 2.2  1.1   -1 +1
+RoutingTableEntry
+RoutingTable::fun9(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart - 1;
+  uint32_t dst2_third = dst_thirdPart - 1;
+  uint32_t nexthop2_second = nexthop_secondPart + 1;
+  uint32_t nexthop2_third = nexthop_thirdPart + 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 2.2  2.2   -1 -1
+RoutingTableEntry
+RoutingTable::fun10(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart - 1;
+  uint32_t dst2_third = dst_thirdPart - 1;
+  uint32_t nexthop2_second = nexthop_secondPart - 1;
+  uint32_t nexthop2_third = nexthop_thirdPart - 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 2.2  2.2   -1 不变
+RoutingTableEntry
+RoutingTable::fun11(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart - 1;
+  uint32_t dst2_third = dst_thirdPart - 1;
+  uint32_t nexthop2_second = nexthop_secondPart - 1;
+  uint32_t nexthop2_third = nexthop_thirdPart - 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/newDstAddress2, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/nexthop, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+// 2.2  2.2   不变 -1
+RoutingTableEntry
+RoutingTable::fun12(RoutingTableEntry & rt)
+{ 
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  //把传进来的destination和nexthop的第二、三字段加1
+  uint32_t dst2_second = dst_secondPart - 1;
+  uint32_t dst2_third = dst_thirdPart - 1;
+  uint32_t nexthop2_second = nexthop_secondPart - 1;
+  uint32_t nexthop2_third = nexthop_thirdPart - 1;
+  
+  //拼成新的地址
+  uint32_t newDstAsInteger2 = (dstAsInteger & 0xFF0000FF) | ((dst2_second & 0xFF) << 8) | ((dst2_third & 0xFF) << 16);
+  Ipv4Address newDstAddress2(newDstAsInteger2);
+  uint32_t newNexthopAsInteger2 = (nexthopAsInteger & 0xFF0000FF) | ((nexthop2_second & 0xFF) << 8) | ((nexthop2_third & 0xFF) << 16);
+  Ipv4Address newNexthopAddress2(newNexthopAsInteger2);
+
+
+  RoutingTableEntry newEntry (
+    //Add:
+    rt.GetX(),
+    rt.GetY(),
+    rt.GetZ(),
+    rt.GetVX(),
+    rt.GetVY(),
+    rt.GetVZ(),
+    rt.GetTimestamp(),
+    /*device=*/ rt.GetOutputDevice(), 
+    /*dst=*/dst, 
+    /*seqno=*/rt.GetSeqNo(),
+    /*iface=*/ rt.GetInterface(),  //存储是从哪个接口接收到的包
+    /*hops=*/ rt.GetHop (), 
+    /*next hop=*/newNexthopAddress2, 
+    /*lifetime=*/Simulator::Now (), 
+    /*settlingTime*/rt.GetSettlingTime(), 
+    /*entries changed*/true);
+    newEntry.SetFlag (VALID);
+  //   cout << "dst: " << dst << ", next: " << nexthop << 
+  // ", newDst: " << newEntry.GetDestination() << ", newNext: " << newEntry.GetNextHop() << endl;
+    return newEntry;
+}
+
+
 bool
 RoutingTable::AddRoute (RoutingTableEntry & rt)
 {
-  std::pair<std::map<Ipv4Address, RoutingTableEntry>::iterator, bool> result = m_ipv4AddressEntry.insert (std::make_pair (
-                                                                                                            rt.GetDestination (),rt));
+  std::pair<std::map<Ipv4Address, RoutingTableEntry>::iterator, bool> result = m_ipv4AddressEntry.insert (std::make_pair (rt.GetDestination (),rt));
+
+  //ADD:根据destination和nexthop来判断，给每一条路由条目，再增加另外三条
+  Ipv4Address dst = rt.GetDestination();
+  Ipv4Address nexthop = rt.GetNextHop();
+  //ADD:
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = dst.Get();
+  uint32_t nexthopAsInteger = nexthop.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+  uint32_t nexthop_secondPart = (nexthopAsInteger >> 8) & 0xFF;
+  // // 获取IPv4地址的第三部分（子网标识）
+  // uint32_t dst_thirdPart = (dstAsInteger >> 16) & 0xFF;
+  // uint32_t nexthop_thirdPart = (nexthopAsInteger >> 16) & 0xFF;
+
+  if(dst_secondPart == 1 && nexthop_secondPart ==1){
+    RoutingTableEntry rt1 = fun1(rt);
+    RoutingTableEntry rt2 = fun2(rt);
+    RoutingTableEntry rt3 = fun3(rt);
+    m_ipv4AddressEntry.insert (std::make_pair (rt1.GetDestination (),rt1));
+    m_ipv4AddressEntry.insert (std::make_pair (rt2.GetDestination (),rt2));
+    m_ipv4AddressEntry.insert (std::make_pair (rt3.GetDestination (),rt3));
+    // if(result1.second == true) cout << "rt1 添加成功" << endl;
+    // else cout << "rt1 添加失败" << endl;
+    // if(result2.second == true) cout << "rt2 添加成功" << endl;
+    // else cout << "rt2 添加失败" << endl;
+    // if(result3.second == true) cout << "rt3 添加成功" << endl;
+    // else cout << "rt3 添加失败" << endl;  
+
+  } 
+  if(dst_secondPart == 1 && nexthop_secondPart ==2){
+    RoutingTableEntry rt1 = fun4(rt);
+    RoutingTableEntry rt2 = fun5(rt);
+    RoutingTableEntry rt3 = fun6(rt);
+    m_ipv4AddressEntry.insert (std::make_pair (rt1.GetDestination (),rt1));
+    m_ipv4AddressEntry.insert (std::make_pair (rt2.GetDestination (),rt2));
+    m_ipv4AddressEntry.insert (std::make_pair (rt3.GetDestination (),rt3));
+    // if(result1.second == true) cout << "rt1 添加成功" << endl;
+    // else cout << "rt1 添加失败" << endl;
+    // if(result2.second == true) cout << "rt2 添加成功" << endl;
+    // else cout << "rt2 添加失败" << endl;
+    // if(result3.second == true) cout << "rt3 添加成功" << endl;
+    // else cout << "rt3 添加失败" << endl;
+  }
+  if(dst_secondPart == 2 && nexthop_secondPart ==1){
+    RoutingTableEntry rt1 = fun7(rt);
+    RoutingTableEntry rt2 = fun8(rt);
+    RoutingTableEntry rt3 = fun9(rt);
+    m_ipv4AddressEntry.insert (std::make_pair (rt1.GetDestination (),rt1));
+    m_ipv4AddressEntry.insert (std::make_pair (rt2.GetDestination (),rt2));
+    m_ipv4AddressEntry.insert (std::make_pair (rt3.GetDestination (),rt3));
+    // if(result1.second == true) cout << "rt1 添加成功" << endl;
+    // else cout << "rt1 添加失败" << endl;
+    // if(result2.second == true) cout << "rt2 添加成功" << endl;
+    // else cout << "rt2 添加失败" << endl;
+    // if(result3.second == true) cout << "rt3 添加成功" << endl;
+    // else cout << "rt3 添加失败" << endl;  
+  }
+  if(dst_secondPart == 2 && nexthop_secondPart ==2){
+    RoutingTableEntry rt1 = fun10(rt);
+    RoutingTableEntry rt2 = fun11(rt);
+    RoutingTableEntry rt3 = fun12(rt);
+    m_ipv4AddressEntry.insert (std::make_pair (rt1.GetDestination (),rt1));
+    m_ipv4AddressEntry.insert (std::make_pair (rt2.GetDestination (),rt2));
+    m_ipv4AddressEntry.insert (std::make_pair (rt3.GetDestination (),rt3));
+    // if(result1.second == true) cout << "rt1 添加成功" << endl;
+    // else cout << "rt1 添加失败" << endl;
+    // if(result2.second == true) cout << "rt2 添加成功" << endl;
+    // else cout << "rt2 添加失败" << endl;
+    // if(result3.second == true) cout << "rt3 添加成功" << endl;
+    // else cout << "rt3 添加失败" << endl;  
+  }
+  
+  
   return result.second;
 }
 

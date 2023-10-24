@@ -41,6 +41,9 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include<arpa/inet.h>
 using namespace std;
 namespace ns3 {
 
@@ -353,12 +356,13 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
           std::cout<<"A route exists from "<<route->GetSource ()
                                                << " to neighboring destination "
                                                << route->GetDestination ()<<endl;
-          if (oif != 0 && route->GetOutputDevice () != oif)
-            {
-              NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
-              sockerr = Socket::ERROR_NOROUTETOHOST;
-              return Ptr<Ipv4Route> ();
-            }
+          // if (oif != 0 && route->GetOutputDevice () != oif)
+          //   {
+          //     NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
+          //     cout<<"RouteOutput(下一跳就是邻居): Output device doesn't match. Dropped."<<endl;
+          //     sockerr = Socket::ERROR_NOROUTETOHOST;
+          //     return Ptr<Ipv4Route> ();
+          //   }
             // 返回直接到邻居的路由
           return route;
         }
@@ -374,13 +378,17 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
               NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
                                                    << " to destination " << dst << " via "
                                                    << rt.GetNextHop ());
-              if (oif != 0 && route->GetOutputDevice () != oif)
-                {
-                  NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
-                  cout<<"Output device doesn't match. Dropped."<<endl;
-                  sockerr = Socket::ERROR_NOROUTETOHOST;
-                  return Ptr<Ipv4Route> ();
-                }
+              cout << "A route exists from " << route->GetSource ()
+                                                   << " to destination " << dst << " via "
+                                                   << rt.GetNextHop () << endl;
+              cout << "oif: " << oif << ", route->GetOutputDevice: " << route->GetOutputDevice() << endl;
+              // if (oif != 0 && route->GetOutputDevice () != oif)
+              //   {
+              //     NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
+              //     cout<<"RouteOutput(有路由，但是不是邻居): Output device doesn't match. Dropped."<<endl;
+              //     sockerr = Socket::ERROR_NOROUTETOHOST;
+              //     return Ptr<Ipv4Route> ();
+              //   }
                 //返回到目的地的下一跳路由
               return route;
             }
@@ -623,6 +631,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
   Ipv4Address receiver = m_socketAddresses[socket].GetLocal ();
   Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (receiver));
 
+
 // ipv4->GetAddress (1,0); 将获取第二个接口的第一个地址（第一个是环回，其地址为 127.0.0.1）
 //   cout<<"dev: "<<dev<<", 接口数量："<<m_ipv4->GetNInterfaces()<<endl;x
 //   cout<<"dev: "<<dev<<", 第一个接口的ip地址是"<<m_ipv4->GetAddress (0, 0)<<endl;
@@ -642,8 +651,8 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
   uint32_t packetSize = packet->GetSize ();
   NS_LOG_FUNCTION (m_mainAddress << " received dsdv packet of size: " << packetSize
                                  << " and packet id: " << packet->GetUid ());
-  cout<<m_mainAddress << " received dsdv packet of size: " << packetSize
-                                 << " and packet id: " << packet->GetUid ()<<endl;
+  // cout<<m_mainAddress << " received dsdv packet of size: " << packetSize
+  //                                << " and packet id: " << packet->GetUid ()<<endl;
   uint32_t count = 0;
   //ADD 头部大小改了，改成28了，所以这里之前的12要改成28
   for (; packetSize > 0; packetSize = packetSize - 28)
@@ -658,7 +667,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
            != m_socketAddresses.end (); ++j)
         {
           Ipv4InterfaceAddress interface = j->second;
-          cout << "j->second: "<<j->second<<endl;
+          // cout << "j->second: "<<j->second<<endl;
           if (dsdvHeader.GetDst () == interface.GetLocal ()) //如果目的地跟自己的地址一样
             {
               if (dsdvHeader.GetDstSeqno () % 2 == 1) //判断序列号是不是正确的
@@ -688,9 +697,11 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                     << dsdvHeader.GetDstSeqno () << ", HopCount: " << dsdvHeader.GetHopCount ());
       // cout<<"Received a DSDV packet from "<< sender << " to " << receiver << ". Details are: Destination: " << dsdvHeader.GetDst () << ", Seq No: "
       //               << dsdvHeader.GetDstSeqno () << ", HopCount: " << dsdvHeader.GetHopCount ()<<endl;
-      RoutingTableEntry fwdTableEntry, advTableEntry;
+      RoutingTableEntry fwdTableEntry, advTableEntry, advTableEntry1;
       EventId event;
       bool permanentTableVerifier = m_routingTable.LookupRoute (dsdvHeader.GetDst (),fwdTableEntry);
+
+
       // 收到的更新在主路由表中不存在
       if (permanentTableVerifier == false)
         {
@@ -716,11 +727,15 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                 /*lifetime=*/Simulator::Now (), 
                 /*settlingTime*/m_settlingTime, 
                 /*entries changed*/true);
-              newEntry.SetFlag (VALID);
-              m_routingTable.AddRoute (newEntry);
-              NS_LOG_DEBUG ("New Route added to both tables");
-              cout<<"New Route added to both tables"<<endl;
-              m_advRoutingTable.AddRoute (newEntry);
+                newEntry.SetFlag (VALID);
+                m_routingTable.AddRoute (newEntry);
+                NS_LOG_DEBUG ("New Route added to both tables");
+                cout<<"New Route added to both tables"<<endl;
+                m_advRoutingTable.AddRoute (newEntry);
+                cout << "the dev: " << dev << endl;
+                cout << "the iface: " << m_ipv4->GetAddress (m_ipv4->GetInterfaceForAddress (receiver), 0) << endl;
+                cout << "the sender: " << sender << endl;
+                cout << "the receiver: " << receiver << endl;
             }
           else
             {
@@ -747,9 +762,12 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
               // present in fwd table and not in advtable
               // 在FWD表中存在，在advtable中不存在
               m_advRoutingTable.AddRoute (fwdTableEntry);
+
               m_advRoutingTable.LookupRoute (dsdvHeader.GetDst (),advTableEntry);
+              
             }
             // 现在两个表中都有到目的地的表项了，并且路由表项是有效的
+          //序列号为偶数，有效
           if (dsdvHeader.GetDstSeqno () % 2 != 1)
             {
               if (dsdvHeader.GetDstSeqno () > advTableEntry.GetSeqNo ())
@@ -773,13 +791,13 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       advTableEntry.SetVY(dsdvHeader.GetVY());
                       advTableEntry.SetVZ(dsdvHeader.GetVZ());
                       advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
-                      
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
                       advTableEntry.SetLifeTime (Simulator::Now ());
                       advTableEntry.SetFlag (VALID);
                       advTableEntry.SetEntriesChanged (true);
                       advTableEntry.SetNextHop (sender);
                       advTableEntry.SetHop (dsdvHeader.GetHopCount ());
+
                       NS_LOG_DEBUG ("Received update with better sequence number and changed metric.Waiting for WST");
                       Time tempSettlingtime = GetSettlingTime (dsdvHeader.GetDst ());
                       advTableEntry.SetSettlingTime (tempSettlingtime);
@@ -788,7 +806,6 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       event = Simulator::Schedule (tempSettlingtime,&RoutingProtocol::SendTriggeredUpdate,this);
                       m_advRoutingTable.AddIpv4Event (dsdvHeader.GetDst (),event);
                       NS_LOG_DEBUG ("EventCreated EventUID: " << event.GetUid ());
-                      cout<<"EventCreated EventUID: " << event.GetUid ()<<endl;
                       // if received changed metric, use it but adv it only after wst
                       // 如果收到更改的度量，则使用它，但仅在WST之后进行adv
                       m_routingTable.Update (advTableEntry);
@@ -815,10 +832,12 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       advTableEntry.SetNextHop (sender);
                       advTableEntry.SetHop (dsdvHeader.GetHopCount ());
                       m_advRoutingTable.Update (advTableEntry);
+
                       NS_LOG_DEBUG ("Route with better sequence number and same metric received. Advertised without WST");
                       cout<<"Route with better sequence number and same metric received. Advertised without WST"<<endl;
                     }
                 }
+              //序列号相等
               else if (dsdvHeader.GetDstSeqno () == advTableEntry.GetSeqNo ())
                 {
                   if (dsdvHeader.GetHopCount () < advTableEntry.GetHop ())
@@ -828,7 +847,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                        * As the metric is changed, we will have to wait for WST before sending out this update.
                        */
                       // 由于指标发生了变化，我们必须等待WST之后才能发送此更新。
-                      NS_LOG_DEBUG ("Canceling any existing timer to update route with same sequence number "
+                      NS_LOG_DEBUG ("Cancelwing any existing timer to update route with same sequence number "
                                     "and better hop count");
                       cout<<"Canceling any existing timer to update route with same sequence number "
                                     "and better hop count"<<endl;
@@ -884,6 +903,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                                     "same/worst metric for, " << dsdvHeader.GetDst () << ". Discarding the update.");
                     }
                 }
+              //收到更旧的序列号
               else
                 {
                   // Received update with an old sequence number. Discard the update
@@ -895,6 +915,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                   NS_LOG_DEBUG (dsdvHeader.GetDst () << " : Received update with old seq number. Discarding the update.");
                 }
             }
+          //序列号为奇数，无效
           else
             {
               NS_LOG_DEBUG ("Route with infinite metric received for "
@@ -1372,6 +1393,34 @@ RoutingProtocol::Drop (Ptr<const Packet> packet,
                               << header.GetDestination () << " from queue. Error " << err);
 }
 
+//ADD: 新增一个函数，函数功能是：当查找的下一跳为10.1.1.x时，如果找不到，可以再去尝试查找下一跳为10.2.2.x的路由条目
+//反之，当查找的下一跳为10.2.2.x时，如果找不到，可以再去尝试查找下一跳为10.1.1.x的路由条目
+Ipv4Address Ipv4Address_Trans(Ipv4Address ip){
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = ip.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t ip_secondPart = (dstAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t ip_thirdPart = (dstAsInteger >> 16) & 0xFF;
+
+  //把传进来的ip的第二、三字段加1或者减一
+  if(ip_secondPart == 1){
+    ip_secondPart += 1;
+    ip_thirdPart += 1;
+  }
+  else{
+    ip_secondPart -= 1;
+    ip_thirdPart -= 1;
+  }
+  
+  //拼成新的地址
+  uint32_t newipAsInteger = (dstAsInteger & 0xFF0000FF) | ((ip_secondPart & 0xFF) << 8) | ((ip_thirdPart & 0xFF) << 16);
+  Ipv4Address newip(newipAsInteger);
+  return newip;
+}
+
+
+
 // 寻找所有排队的数据包并将它们发送出去
 void
 RoutingProtocol::LookForQueuedPackets ()  
@@ -1382,51 +1431,30 @@ RoutingProtocol::LookForQueuedPackets ()
   std::map<Ipv4Address, RoutingTableEntry> allRoutes;
   m_routingTable.GetListOfAllRoutes (allRoutes);
 
-  //ADD:
-  for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i){
-    RoutingTableEntry rt;
-    rt = i->second;
-    cout << "Route: " << rt.GetRoute() << endl;
-    cout << "X: " << rt.GetX() << endl;
-      cout << "Y: " << rt.GetY() << endl;
-      cout << "Z: " << rt.GetX() << endl;
-      cout << "VX: " << rt.GetVX() << endl;
-      cout << "VY: " << rt.GetVY() << endl;
-      cout << "VZ: " << rt.GetVZ() << endl;
-      cout << "timestamp: " << rt.GetTimestamp() << endl;
-      cout << "Destination: " << rt.GetDestination() << endl;
-      cout << "Nexthop: " << rt.GetNextHop() << endl;
-      cout << "Interface: " << rt.GetInterface() << endl;
-      cout << "HopCount: " << rt.GetHop() << endl;
-      cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
-      cout << "SeqNum: " << rt.GetSeqNo() << endl;
-  }
-
-
-
   for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i)
     {
       RoutingTableEntry rt;
       rt = i->second;
       if (m_queue.Find (rt.GetDestination ()))
         {
+          cout << "源节点信息: " << rt.GetRoute()->GetSource() << endl;
           //ADD
-      cout << endl;
-      cout << "X: " << rt.GetX() << endl;
-      cout << "Y: " << rt.GetY() << endl;
-      cout << "Z: " << rt.GetX() << endl;
-      cout << "VX: " << rt.GetVX() << endl;
-      cout << "VY: " << rt.GetVY() << endl;
-      cout << "VZ: " << rt.GetVZ() << endl;
-      cout << "timestamp: " << rt.GetTimestamp() << endl;
-      cout << "Route: " << rt.GetRoute() << endl;
-      cout << "Destination: " << rt.GetDestination() << endl;
-      cout << "Nexthop: " << rt.GetNextHop() << endl;
-      cout << "Interface: " << rt.GetInterface() << endl;
-      cout << "HopCount: " << rt.GetHop() << endl;
-      cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
-      cout << "SeqNum: " << rt.GetSeqNo() << endl;
-      cout<<"the old route->GetOutputDevice: "<<rt.GetRoute()->GetOutputDevice ()<<endl<<endl;
+          // cout << endl;
+          // cout << "X: " << rt.GetX() << endl;
+          // cout << "Y: " << rt.GetY() << endl;
+          // cout << "Z: " << rt.GetX() << endl;
+          // cout << "VX: " << rt.GetVX() << endl;
+          // cout << "VY: " << rt.GetVY() << endl;
+          // cout << "VZ: " << rt.GetVZ() << endl;
+          // cout << "timestamp: " << rt.GetTimestamp() << endl;
+          cout << "Route: " << rt.GetRoute() << endl;
+          cout << "Destination: " << rt.GetDestination() << endl;
+          cout << "Nexthop: " << rt.GetNextHop() << endl;
+          cout << "Interface: " << rt.GetInterface() << endl;
+          cout << "HopCount: " << rt.GetHop() << endl;
+          cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
+          cout << "SeqNum: " << rt.GetSeqNo() << endl;
+          cout<<"the old route->GetOutputDevice: "<<rt.GetRoute()->GetOutputDevice ()<<endl<<endl;
           if (rt.GetHop () == 1)
             {
               route = rt.GetRoute ();
@@ -1442,27 +1470,41 @@ RoutingProtocol::LookForQueuedPackets ()
           else
             {
               RoutingTableEntry newrt;
-              m_routingTable.LookupRoute (rt.GetNextHop (),newrt);
-              route = newrt.GetRoute ();
-              cout << "the newrt: " << route << endl;
-              cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
+              bool res = m_routingTable.LookupRoute (rt.GetNextHop (),newrt);
+              Ipv4Address newip = Ipv4Address_Trans(rt.GetNextHop());
+              //如果一开始找下一跳没找到，换个ip试一下
+              if(res == 0){
+                m_routingTable.LookupRoute (newip, newrt);
+                route = newrt.GetRoute ();
+                cout << "YES : " << m_routingTable.LookupRoute (newip, newrt) << endl;
+                cout << "源节点信息2: " << route->GetSource() << endl;
+                cout << "the newrt: " << route << endl;
+                cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
+              }
+              else{
+                route = newrt.GetRoute ();
+                cout << "YES : " << m_routingTable.LookupRoute (rt.GetNextHop (),newrt) << endl;
+                cout << "源节点信息2: " << route->GetSource() << endl;
+                cout << "the newrt: " << route << endl;
+                cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
+              }
 
               //ADD
-      cout << endl;
-      cout << "X: " << newrt.GetX() << endl;
-      cout << "Y: " << newrt.GetY() << endl;
-      cout << "Z: " << newrt.GetX() << endl;
-      cout << "VX: " << newrt.GetVX() << endl;
-      cout << "VY: " << newrt.GetVY() << endl;
-      cout << "VZ: " << newrt.GetVZ() << endl;
-      cout << "timestamp: " << newrt.GetTimestamp() << endl;
-      cout << "Route: " << newrt.GetRoute() << endl;
-      cout << "Destination: " << newrt.GetDestination() << endl;
-      cout << "Nexthop: " << newrt.GetNextHop() << endl;
-      cout << "Interface: " << newrt.GetInterface() << endl;
-      cout << "HopCount: " << newrt.GetHop() << endl;
-      cout << "OutputDevice: " << newrt.GetOutputDevice() << endl;
-      cout << "SeqNum: " << newrt.GetSeqNo() << endl;
+              // cout << endl;
+              // cout << "X: " << newrt.GetX() << endl;
+              // cout << "Y: " << newrt.GetY() << endl;
+              // cout << "Z: " << newrt.GetX() << endl;
+              // cout << "VX: " << newrt.GetVX() << endl;
+              // cout << "VY: " << newrt.GetVY() << endl;
+              // cout << "VZ: " << newrt.GetVZ() << endl;
+              // cout << "timestamp: " << newrt.GetTimestamp() << endl;
+              // cout << "Route: " << newrt.GetRoute() << endl;
+              cout << "Destination: " << newrt.GetDestination() << endl;
+              cout << "Nexthop: " << newrt.GetNextHop() << endl;
+              cout << "Interface: " << newrt.GetInterface() << endl;
+              // cout << "HopCount: " << newrt.GetHop() << endl;
+              // cout << "OutputDevice: " << newrt.GetOutputDevice() << endl;
+              // cout << "SeqNum: " << newrt.GetSeqNo() << endl;
 
 
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
@@ -1489,8 +1531,6 @@ RoutingProtocol::SendPacketFromQueue (Ipv4Address dst,
                                       Ptr<Ipv4Route> route)
 {
   cout << "Now is Send Packet from Queue......" << endl;
-
-
   NS_LOG_DEBUG (m_mainAddress << " is sending a queued packet to destination " << dst);
   QueueEntry queueEntry;
   if (m_queue.Dequeue (dst,queueEntry))
@@ -1502,6 +1542,7 @@ RoutingProtocol::SendPacketFromQueue (Ipv4Address dst,
           if (tag.oif != -1 && tag.oif != m_ipv4->GetInterfaceForDevice (route->GetOutputDevice ()))
             {
               NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
+              cout << "SendPacketFromQueue: Output device doesn't match. Dropped." << endl;
               return;
             }
         }

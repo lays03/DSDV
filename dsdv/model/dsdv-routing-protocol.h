@@ -69,6 +69,13 @@ public:
   virtual void
   DoDispose ();
 
+// //ADD: 新增一个函数，函数功能是：当查找的下一跳为10.1.1.x时，如果找不到，可以再去尝试查找下一跳为10.2.2.x的路由条目
+// //反之，当查找的下一跳为10.2.2.x时，如果找不到，可以再去尝试查找下一跳为10.1.1.x的路由条目
+// Ipv4Address
+// RoutingProtocol::Ipv4Address_Trans(Ipv4Address ip){
+//    Ipv4Address newip;
+//   return newip;
+// }
 
   //ADD: 添加函数，从数据包中获得正确的带方向的速度，用于更新路由表
   //ADD: 转换速度符号的两个函数，sign用来记录速度是否为负数，

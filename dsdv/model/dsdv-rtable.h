@@ -370,10 +370,37 @@ public:
   /**
    * Add routing table entry if it doesn't yet exist in routing table
    * \param r routing table entry
+   * \param dev
+   * \param iface
    * \return true in success
    */
   bool
   AddRoute (RoutingTableEntry & r);
+
+  
+  //ADD: 以下四个功能函数分别对destination和nexthop的操作为：
+  //10.1.1.x  10.1.1.y
+  RoutingTableEntry fun1(RoutingTableEntry & r); // +1 +1
+  RoutingTableEntry fun2(RoutingTableEntry & r); // +1 不变
+  RoutingTableEntry fun3(RoutingTableEntry & r); // 不变 +1
+
+  //10.1.1.x  10.2.2.y
+  RoutingTableEntry fun4(RoutingTableEntry & r); // 不变 -1
+  RoutingTableEntry fun5(RoutingTableEntry & r); // +1 -1
+  RoutingTableEntry fun6(RoutingTableEntry & r); // +1 不变
+
+  //10.2.2.x  10.1.1.y
+  RoutingTableEntry fun7(RoutingTableEntry & r); // 不变 +1
+  RoutingTableEntry fun8(RoutingTableEntry & r); // -1 不变
+  RoutingTableEntry fun9(RoutingTableEntry & r); // -1 +1
+
+  //10.2.2.x  10.2.2.y
+  RoutingTableEntry fun10(RoutingTableEntry & r); // -1 -1
+  RoutingTableEntry fun11(RoutingTableEntry & r); // -1 不变
+  RoutingTableEntry fun12(RoutingTableEntry & r); // 不变 -1
+  
+
+
   /**
    * Delete routing table entry with destination address dst, if it exists.
    * \param dst destination address
