@@ -1035,7 +1035,11 @@ RoutingProtocol::SendTriggeredUpdate ()
           RoutingTableEntry temp2;
           m_routingTable.LookupRoute (m_ipv4->GetAddress (1, 0).GetBroadcast (), temp2);
 
-          //ADD:
+          // 节点的第二个接口也需要发
+          RoutingTableEntry temp3;
+          m_routingTable.LookupRoute (m_ipv4->GetAddress (2, 0).GetBroadcast (), temp3);
+
+          //ADD: 第一个接口
           dsdvHeader.SetX(temp2.GetX());
           dsdvHeader.SetY(temp2.GetY());
           dsdvHeader.SetZ(temp2.GetZ());
@@ -1048,7 +1052,23 @@ RoutingProtocol::SendTriggeredUpdate ()
           dsdvHeader.SetDst (m_ipv4->GetAddress (1, 0).GetLocal ());
           dsdvHeader.SetDstSeqno (temp2.GetSeqNo ());
           dsdvHeader.SetHopCount (temp2.GetHop () + 1);
-          NS_LOG_DEBUG ("Adding my update as well to the packet");
+          NS_LOG_DEBUG ("Adding my update(the first interface) as well to the packet");
+
+          //ADD: 第二个接口
+          dsdvHeader.SetX(temp3.GetX());
+          dsdvHeader.SetY(temp3.GetY());
+          dsdvHeader.SetZ(temp3.GetZ());
+          dsdvHeader.SetVX(temp3.GetVX());
+          dsdvHeader.SetVY(temp3.GetVY());
+          dsdvHeader.SetVZ(temp3.GetVZ());
+          dsdvHeader.SetTimestamp(temp3.GetTimestamp());
+          dsdvHeader.SetSign(dsdvHeader.GetSign());
+
+          dsdvHeader.SetDst (m_ipv4->GetAddress (2, 0).GetLocal ());
+          dsdvHeader.SetDstSeqno (temp3.GetSeqNo ());
+          dsdvHeader.SetHopCount (temp3.GetHop () + 1);
+          NS_LOG_DEBUG ("Adding my update(the seconde interface) as well to the packet");
+
           packet->AddHeader (dsdvHeader);
           // Send to all-hosts broadcast if on /32 addr, subnet-directed otherwise
           Ipv4Address destination;
@@ -1128,10 +1148,21 @@ RoutingProtocol::SendPeriodicUpdate ()
               dsdvHeader.SetSign(sign);
               dsdvHeader.SetTimestamp(Simulator::Now ().ToInteger(Time::S));
               
-              dsdvHeader.SetDst (m_ipv4->GetAddress (1,0).GetLocal ());
+              //在发送自己的节点状态时候，需要判断一下是从哪个接口发出去的
+              // 将IPv4地址转换为整数
+              uint32_t dstAsInteger = iface.GetLocal().Get();
+              // 获取IPv4地址的第二部分（子网标识）
+              uint32_t ip_secondPart = (dstAsInteger >> 8) & 0xFF;
+              if(ip_secondPart == 1) dsdvHeader.SetDst (m_ipv4->GetAddress (1,0).GetLocal ());
+              else dsdvHeader.SetDst (m_ipv4->GetAddress (2,0).GetLocal ());
+
+
+              // dsdvHeader.SetDst (m_ipv4->GetAddress (1,0).GetLocal ());
               dsdvHeader.SetDstSeqno (i->second.GetSeqNo () + 2);
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
-              m_routingTable.LookupRoute (m_ipv4->GetAddress (1,0).GetBroadcast (),ownEntry);
+              if(ip_secondPart == 1) m_routingTable.LookupRoute (m_ipv4->GetAddress (1,0).GetBroadcast (),ownEntry);
+              else m_routingTable.LookupRoute (m_ipv4->GetAddress (2,0).GetBroadcast (),ownEntry);
+              // m_routingTable.LookupRoute (m_ipv4->GetAddress (1,0).GetBroadcast (),ownEntry);
               ownEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
               //ADD:
               ownEntry.SetX(dsdvHeader.GetX());
@@ -1447,24 +1478,6 @@ RoutingProtocol::LookForQueuedPackets ()
       rt = i->second;
       if (m_queue.Find (rt.GetDestination ()))
         {
-          // cout << "源节点信息: " << rt.GetRoute()->GetSource() << endl;
-          //ADD
-          // cout << endl;
-          // cout << "X: " << rt.GetX() << endl;
-          // cout << "Y: " << rt.GetY() << endl;
-          // cout << "Z: " << rt.GetX() << endl;
-          // cout << "VX: " << rt.GetVX() << endl;
-          // cout << "VY: " << rt.GetVY() << endl;
-          // cout << "VZ: " << rt.GetVZ() << endl;
-          // cout << "timestamp: " << rt.GetTimestamp() << endl;
-          // cout << "Route: " << rt.GetRoute() << endl;
-          // cout << "Destination: " << rt.GetDestination() << endl;
-          // cout << "Nexthop: " << rt.GetNextHop() << endl;
-          // cout << "Interface: " << rt.GetInterface() << endl;
-          // cout << "HopCount: " << rt.GetHop() << endl;
-          // cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
-          // cout << "SeqNum: " << rt.GetSeqNo() << endl;
-          // cout<<"the old route->GetOutputDevice: "<<rt.GetRoute()->GetOutputDevice ()<<endl<<endl;
           if (rt.GetHop () == 1)
             {
               route = rt.GetRoute ();
@@ -1486,37 +1499,10 @@ RoutingProtocol::LookForQueuedPackets ()
               if(res == 0){
                 m_routingTable.LookupRoute (newip, newrt);
                 route = newrt.GetRoute ();
-                // cout << "YES : " << m_routingTable.LookupRoute (newip, newrt) << endl;
-                // cout << "源节点信息2: " << route->GetSource() << endl;
-                // cout << "the newrt: " << route << endl;
-                // cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
               }
               else{
                 route = newrt.GetRoute ();
-                // cout << "YES : " << m_routingTable.LookupRoute (rt.GetNextHop (),newrt) << endl;
-                // cout << "源节点信息2: " << route->GetSource() << endl;
-                // cout << "the newrt: " << route << endl;
-                // cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
               }
-
-              //ADD
-              // cout << endl;
-              // cout << "X: " << newrt.GetX() << endl;
-              // cout << "Y: " << newrt.GetY() << endl;
-              // cout << "Z: " << newrt.GetX() << endl;
-              // cout << "VX: " << newrt.GetVX() << endl;
-              // cout << "VY: " << newrt.GetVY() << endl;
-              // cout << "VZ: " << newrt.GetVZ() << endl;
-              // cout << "timestamp: " << newrt.GetTimestamp() << endl;
-              // cout << "Route: " << newrt.GetRoute() << endl;
-              // cout << "newrt_Destination: " << newrt.GetDestination() << endl;
-              // cout << "newrt_Nexthop: " << newrt.GetNextHop() << endl;
-              // cout << "newrt_Interface: " << newrt.GetInterface() << endl;
-              // cout << "HopCount: " << newrt.GetHop() << endl;
-              // cout << "OutputDevice: " << newrt.GetOutputDevice() << endl;
-              // cout << "SeqNum: " << newrt.GetSeqNo() << endl;
-
-
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to destination " << route->GetDestination () << " via "
                                                    << rt.GetNextHop ());
