@@ -461,7 +461,6 @@ Ipv4L3Protocol::GetInterfaceForAddress (
         {
           if ((*i)->GetAddress (j).GetLocal () == address)
             {
-              cout<<"i: "<<i<<", interface: "<<interface<<endl;
               return interface;
             }
         }
