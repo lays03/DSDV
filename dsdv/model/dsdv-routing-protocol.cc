@@ -1478,9 +1478,19 @@ RoutingProtocol::LookForQueuedPackets ()
       rt = i->second;
       if (m_queue.Find (rt.GetDestination ()))
         {
+          cout << "源节点信息: " << rt.GetRoute()->GetSource() << endl;
+          cout << "Route: " << rt.GetRoute() << endl;
+          cout << "Destination: " << rt.GetDestination() << endl;
+          cout << "Nexthop: " << rt.GetNextHop() << endl;
+          cout << "Interface: " << rt.GetInterface() << endl;
+          cout << "HopCount: " << rt.GetHop() << endl;
+          cout << "OutputDevice: " << rt.GetOutputDevice() << endl;
+          cout << "SeqNum: " << rt.GetSeqNo() << endl;
+          cout<<"the old route->GetOutputDevice: "<<rt.GetRoute()->GetOutputDevice ()<<endl<<endl;
           if (rt.GetHop () == 1)
             {
               route = rt.GetRoute ();
+              
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to neighboring destination "
                                                    << route->GetDestination ());
@@ -1495,13 +1505,27 @@ RoutingProtocol::LookForQueuedPackets ()
               RoutingTableEntry newrt;
               bool res = m_routingTable.LookupRoute (rt.GetNextHop (),newrt);
               Ipv4Address newip = Ipv4Address_Trans(rt.GetNextHop());
+
+              
               // 如果一开始找下一跳没找到，换个ip试一下
               if(res == 0){
-                m_routingTable.LookupRoute (newip, newrt);
+                bool res2 = m_routingTable.LookupRoute (newip, newrt);
+                if(res2 == 0){
+                  cout << "没有找到路由" << endl;
+                  break;
+                }
                 route = newrt.GetRoute ();
+                cout << "YES : " << m_routingTable.LookupRoute (newip, newrt) << endl;
+                cout << "源节点信息2: " << route->GetSource() << endl;
+                cout << "the newrt: " << route << endl;
+                cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
               }
               else{
                 route = newrt.GetRoute ();
+                cout << "YES : " << m_routingTable.LookupRoute (rt.GetNextHop (),newrt) << endl;
+                cout << "源节点信息2: " << route->GetSource() << endl;
+                cout << "the newrt: " << route << endl;
+                cout<<"the new route->GetOutputDevice: "<<route->GetOutputDevice ()<<endl;
               }
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to destination " << route->GetDestination () << " via "
