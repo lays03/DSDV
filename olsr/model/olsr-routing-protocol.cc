@@ -282,24 +282,26 @@ RoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream, Time::Unit 
       << ", Local time: " << m_ipv4->GetObject<Node> ()->GetLocalTime ().As (unit)
       << ", OLSR Routing table" << std::endl;
 
-  *os << std::setw (16) << "Destination";
+  *os << std::setw (16) << "Destination111";
   *os << std::setw (16) << "NextHop";
   *os << std::setw (16) << "Interface";
-  *os << "Distance" << std::endl;
+  *os << std::setw (16) << "Distance" << std::endl;
 
   for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator iter = m_table.begin ();
        iter != m_table.end (); iter++)
     {
-      *os << std::setw (16) << iter->first;
-      *os << std::setw (16) << iter->second.nextAddr;
-      *os << std::setw (16);
+      *os << iter->first << "        ";
+      *os << iter->second.nextAddr << "        ";
+      // *os << std::setw (16) << iter->first;
+      // *os << std::setw (16) << iter->second.nextAddr;
+      // *os << std::setw (16);
       if (Names::FindName (m_ipv4->GetNetDevice (iter->second.interface)) != "")
         {
-          *os << Names::FindName (m_ipv4->GetNetDevice (iter->second.interface));
+          *os << Names::FindName (m_ipv4->GetNetDevice (iter->second.interface)) << "        ";
         }
       else
         {
-          *os << iter->second.interface;
+          *os << iter->second.interface << "        ";
         }
       *os << iter->second.distance << std::endl;
     }

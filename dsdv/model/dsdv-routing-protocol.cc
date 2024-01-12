@@ -309,7 +309,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
   Ipv4Address dst = header.GetDestination ();
   NS_LOG_DEBUG ("Packet Size: " << p->GetSize ()
                                 << ", Packet id: " << p->GetUid () << ", Destination address in Packet: " << dst);
-  // std::cout<<"Packet Size: "<< p->GetSize()<<", Packet id: "<<p->GetUid()<<", Destination address in Packet: "<<dst<<std::endl;
+  std::cout<<"Packet Size: "<< p->GetSize()<<", Packet id: "<<p->GetUid()<<", Destination address in Packet: "<<dst<<std::endl;
   RoutingTableEntry rt;
 
   // 清除已经过期的路由,并把它们记录在removedAddresses中
@@ -319,7 +319,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
     {
       //ADD:
       rmItr->second.SetX(rmItr->second.GetX());
-      rmItr->second.SetY(rmItr->second.GetY()); 
+      rmItr->second.SetY(rmItr->second.GetY());
       rmItr->second.SetZ(rmItr->second.GetX());
       rmItr->second.SetVX(rmItr->second.GetVX());
       rmItr->second.SetVY(rmItr->second.GetVY());
@@ -338,8 +338,29 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
   // 前提：目前路由表已经干净了
   // 查找路由表中是否有到目的地的路由
   // 有到达目的地的路由
+  
+  // // 这里的dst是header里面需要发到目的地的ip，需要查询两次，因为目的节点有两个接口ip
+  // Ipv4Address dst2 = Ipv4Address_Trans(dst);
+  
+  // //ADD:  自己节点的位置和速度
+  Ptr<MobilityModel> MM = m_ipv4->GetObject<MobilityModel> ();
+  Vector myPos = MM->GetPosition();
+  Vector myVel = MM->GetVelocity();
+  int16_t vx = (int16_t)myVel.x;
+  int16_t vy = (int16_t)myVel.y;
+  int16_t vz = (int16_t)myVel.z;
+  cout<<"x: "<<(uint16_t)myPos.x<<", y: "<<(uint16_t)myPos.y<<", z: "<<(uint16_t)myPos.z<<endl;
+  cout<<"vx: "<<vx<<", vy: "<<vy<<", vz: "<<vz<<endl;
+  RoutingTableEntry rt1;
+  m_routingTable.LookupRoute (dst,rt1);
+  cout << "dst: " << dst << endl;
+  cout << "111222: " << rt1.GetX() << ", " << rt1.GetY() << ", " << rt1.GetZ() << ", " << rt1.GetVX() << ", "
+        << rt1.GetVY() << ", " << rt1.GetVZ() << ", " << rt1.GetSign() << endl;
+  
+
   if (m_routingTable.LookupRoute (dst,rt))
     {
+      cout << "源ip: " << rt.GetRoute()->GetSource() << endl;
       if (EnableBuffering)
         {
           // 查看是否有可以从队列中发送出去的数据包
@@ -374,6 +395,31 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
           if (m_routingTable.LookupRoute (rt.GetNextHop (),newrt))
             {
               route = newrt.GetRoute ();
+              Ipv4Address iface = newrt.GetInterface().GetLocal();
+              cout << "发送的iface: " << iface << endl;
+              cout << "下一跳: " << rt.GetNextHop () << endl;
+
+              // //ADD
+              // // 将IPv4地址转换为整数
+              // uint32_t dstAsInteger = rt.GetNextHop().Get();
+              // // 获取IPv4地址的第二部分（子网标识）
+              // uint32_t dst_secondPart = (dstAsInteger >> 8) & 0xFF;
+              // cout << "dst_secondPart: " << dst_secondPart << endl;
+
+              // // 将IPv4地址转换为整数
+              // uint32_t InterfaceAsInteger = iface.Get();
+              // // 获取IPv4地址的第二部分（子网标识）
+              // uint32_t ip_secondPart = (InterfaceAsInteger >> 8) & 0xFF;
+              // cout << "ip_secondPart: " << ip_secondPart << endl;
+
+              // //把发送的接口调整和dst的接口一致
+              // Ipv4Address newip;
+              // if(ip_secondPart != dst_secondPart){
+              //   newip = Trans(iface);
+              // }
+              // cout << "newip: " << newip << endl;
+              
+              
               NS_ASSERT (route != 0);
               NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
                                                    << " to destination " << dst << " via "
@@ -381,14 +427,14 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
               cout << "A route exists from " << route->GetSource ()
                                                    << " to destination " << dst << " via "
                                                    << rt.GetNextHop () << endl;
-              // cout << "oif: " << oif << ", route->GetOutputDevice: " << route->GetOutputDevice() << endl;
-              // if (oif != 0 && route->GetOutputDevice () != oif)
-              //   {
-              //     NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
-              //     cout<<"RouteOutput(有路由，但是不是邻居): Output device doesn't match. Dropped."<<endl;
-              //     sockerr = Socket::ERROR_NOROUTETOHOST;
-              //     return Ptr<Ipv4Route> ();
-              //   }
+              cout << "oif: " << oif << ", route->GetOutputDevice: " << route->GetOutputDevice() << endl;
+              if (oif != 0 && route->GetOutputDevice () != oif)
+                {
+                  NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
+                  cout<<"RouteOutput(有路由，但是不是邻居): Output device doesn't match. Dropped."<<endl;
+                  sockerr = Socket::ERROR_NOROUTETOHOST;
+                  return Ptr<Ipv4Route> ();
+                }
                 //返回到目的地的下一跳路由
               return route;
             }
@@ -439,7 +485,7 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
                                  << " from " << header.GetSource ()
                                  << " on interface " << idev->GetAddress ()
                                  << " to destination " << header.GetDestination ());
-  cout<<m_mainAddress << " received packet " << p->GetUid ()
+  cout << m_mainAddress << " received packet " << p->GetUid ()
                                  << " from " << header.GetSource ()
                                  << " on interface " << idev->GetAddress ()
                                  << " to destination " << header.GetDestination ()<<endl;
@@ -712,6 +758,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                 dsdvHeader.GetVX(),
                 dsdvHeader.GetVY(),
                 dsdvHeader.GetVZ(),
+                dsdvHeader.GetSign(),
                 dsdvHeader.GetTimestamp(),
                 /*device=*/ dev, 
                 /*dst=*/dsdvHeader.GetDst (), 
@@ -785,6 +832,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       advTableEntry.SetVX(dsdvHeader.GetVX());
                       advTableEntry.SetVY(dsdvHeader.GetVY());
                       advTableEntry.SetVZ(dsdvHeader.GetVZ());
+                      advTableEntry.SetSign(dsdvHeader.GetSign());
                       advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
                       advTableEntry.SetLifeTime (Simulator::Now ());
@@ -818,6 +866,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       advTableEntry.SetVX(dsdvHeader.GetVX());
                       advTableEntry.SetVY(dsdvHeader.GetVY());
                       advTableEntry.SetVZ(dsdvHeader.GetVZ());
+                      advTableEntry.SetSign(dsdvHeader.GetSign());
                       advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
 
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
@@ -855,6 +904,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       advTableEntry.SetVX(dsdvHeader.GetVX());
                       advTableEntry.SetVY(dsdvHeader.GetVY());
                       advTableEntry.SetVZ(dsdvHeader.GetVZ());
+                      advTableEntry.SetSign(dsdvHeader.GetSign());
                       advTableEntry.SetTimestamp(dsdvHeader.GetTimestamp());
 
                       advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
@@ -980,6 +1030,7 @@ RoutingProtocol::SendTriggeredUpdate ()
   m_advRoutingTable.GetListOfAllRoutes (allRoutes);
   //首先定义一个header，放入对应的信息。再通过AddHeader()将包头添加到packet上
   //遍历节点的每一个socket，使用sendTo将packet广播
+
   for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator j = m_socketAddresses.begin (); j
        != m_socketAddresses.end (); ++j)
     {
@@ -1004,7 +1055,7 @@ RoutingProtocol::SendTriggeredUpdate ()
               dsdvHeader.SetVY(i->second.GetVY());
               dsdvHeader.SetVZ(i->second.GetVZ());
               dsdvHeader.SetTimestamp(i->second.GetTimestamp());
-              dsdvHeader.SetSign(dsdvHeader.GetSign());
+              dsdvHeader.SetSign(i->second.GetSign());
 
               dsdvHeader.SetDst (i->second.GetDestination ());
               dsdvHeader.SetDstSeqno (i->second.GetSeqNo ());
@@ -1089,6 +1140,7 @@ RoutingProtocol::SendTriggeredUpdate ()
         {
           NS_LOG_FUNCTION ("Update not sent as there are no updates to be triggered");
         }
+      
     }
 }
 
@@ -1125,8 +1177,6 @@ RoutingProtocol::SendPeriodicUpdate ()
       int16_t vx = (int16_t)myVel.x;
       int16_t vy = (int16_t)myVel.y;
       int16_t vz = (int16_t)myVel.z;
-      cout<<"x: "<<(uint16_t)myPos.x<<", y: "<<(uint16_t)myPos.y<<", z: "<<(uint16_t)myPos.z<<endl;
-      cout<<"vx: "<<vx<<", vy: "<<vy<<", vz: "<<vz<<endl;
       uint16_t sign = SetRightVelocity(vx, vy, vz);
 
       for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i)
@@ -1171,6 +1221,8 @@ RoutingProtocol::SendPeriodicUpdate ()
               ownEntry.SetVX(dsdvHeader.GetVX());
               ownEntry.SetVY(dsdvHeader.GetVY());
               ownEntry.SetVZ(dsdvHeader.GetVZ());
+              ownEntry.SetSign(dsdvHeader.GetSign());
+              ownEntry.SetTimestamp(dsdvHeader.GetTimestamp());
               m_routingTable.Update (ownEntry);
               packet->AddHeader (dsdvHeader);
             }
@@ -1186,6 +1238,7 @@ RoutingProtocol::SendPeriodicUpdate ()
               dsdvHeader.SetVX(i->second.GetVX());
               dsdvHeader.SetVY(i->second.GetVY());
               dsdvHeader.SetVZ(i->second.GetVZ());
+              dsdvHeader.SetSign(i->second.GetSign());
 
               // dsdvHeader.SetX(dsdvHeader.GetX());
               // dsdvHeader.SetY(dsdvHeader.GetY());
@@ -1193,7 +1246,7 @@ RoutingProtocol::SendPeriodicUpdate ()
               // dsdvHeader.SetVX(dsdvHeader.GetVX());
               // dsdvHeader.SetVY(dsdvHeader.GetVY());
               // dsdvHeader.SetVZ(dsdvHeader.GetVZ());
-
+              dsdvHeader.SetTimestamp(i->second.GetTimestamp());
               dsdvHeader.SetDst (i->second.GetDestination ());
               dsdvHeader.SetDstSeqno ((i->second.GetSeqNo ()));
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
@@ -1217,6 +1270,7 @@ RoutingProtocol::SendPeriodicUpdate ()
           removedHeader.SetVX(rmItr->second.GetVX());
           removedHeader.SetVY(rmItr->second.GetVY());
           removedHeader.SetVZ(rmItr->second.GetVZ());
+          removedHeader.SetVZ(rmItr->second.GetSign());
           removedHeader.SetTimestamp(rmItr->second.GetTimestamp());
 
           removedHeader.SetDst (rmItr->second.GetDestination ());
@@ -1261,7 +1315,7 @@ RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   // Remember lo route
   RoutingTableEntry rt (
     dsdvHeader.GetX(), dsdvHeader.GetY(), dsdvHeader.GetZ(),
-    dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetTimestamp(),
+    dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetSign(), dsdvHeader.GetTimestamp(),
     /*device=*/ m_lo,  /*dst=*/
     Ipv4Address::GetLoopback (), /*seqno=*/
     0,
@@ -1300,7 +1354,7 @@ RoutingProtocol::NotifyInterfaceUp (uint32_t i)
   // Add local broadcast record to the routing table
   Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
   RoutingTableEntry rt (dsdvHeader.GetX(), dsdvHeader.GetY(), dsdvHeader.GetZ(),
-    dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetTimestamp(),
+    dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetSign(), dsdvHeader.GetTimestamp(),
     /*device=*/ dev, /*dst=*/ iface.GetBroadcast (), /*seqno=*/ 0,/*iface=*/ iface,/*hops=*/ 0,
                                     /*next hop=*/ iface.GetBroadcast (), /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
   m_routingTable.AddRoute (rt);
@@ -1361,7 +1415,7 @@ RoutingProtocol::NotifyAddAddress (uint32_t i,
       m_socketAddresses.insert (std::make_pair (socket,iface));
       Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
       RoutingTableEntry rt (dsdvHeader.GetX(), dsdvHeader.GetY(), dsdvHeader.GetZ(),
-        dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetTimestamp(),
+        dsdvHeader.GetVX(), dsdvHeader.GetVY(), dsdvHeader.GetVZ(), dsdvHeader.GetSign(), dsdvHeader.GetTimestamp(),
         /*device=*/ dev, /*dst=*/ iface.GetBroadcast (),/*seqno=*/ 0, /*iface=*/ iface,/*hops=*/ 0,
                                         /*next hop=*/ iface.GetBroadcast (), /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
       m_routingTable.AddRoute (rt);
@@ -1435,30 +1489,7 @@ RoutingProtocol::Drop (Ptr<const Packet> packet,
                               << header.GetDestination () << " from queue. Error " << err);
 }
 
-//ADD: 新增一个函数，函数功能是：将Ip地址在10.1.1.x和10.2.2.x之间转换
-Ipv4Address Ipv4Address_Trans(Ipv4Address ip){
-  // 将IPv4地址转换为整数
-  uint32_t dstAsInteger = ip.Get();
-  // 获取IPv4地址的第二部分（子网标识）
-  uint32_t ip_secondPart = (dstAsInteger >> 8) & 0xFF;
-  // 获取IPv4地址的第三部分（子网标识）
-  uint32_t ip_thirdPart = (dstAsInteger >> 16) & 0xFF;
 
-  //把传进来的ip的第二、三字段加1或者减一
-  if(ip_secondPart == 1){
-    ip_secondPart += 1;
-    ip_thirdPart += 1;
-  }
-  else{
-    ip_secondPart -= 1;
-    ip_thirdPart -= 1;
-  }
-  
-  //拼成新的地址
-  uint32_t newipAsInteger = (dstAsInteger & 0xFF0000FF) | ((ip_secondPart & 0xFF) << 8) | ((ip_thirdPart & 0xFF) << 16);
-  Ipv4Address newip(newipAsInteger);
-  return newip;
-}
 
 
 
@@ -1504,7 +1535,7 @@ RoutingProtocol::LookForQueuedPackets ()
             {
               RoutingTableEntry newrt;
               bool res = m_routingTable.LookupRoute (rt.GetNextHop (),newrt);
-              Ipv4Address newip = Ipv4Address_Trans(rt.GetNextHop());
+              Ipv4Address newip = Trans(rt.GetNextHop());
 
               
               // 如果一开始找下一跳没找到，换个ip试一下
@@ -1552,6 +1583,7 @@ RoutingProtocol::SendPacketFromQueue (Ipv4Address dst,
 {
   // cout << "Now is Send Packet from Queue......" << endl;
   NS_LOG_DEBUG (m_mainAddress << " is sending a queued packet to destination " << dst);
+  cout << m_mainAddress << " is sending a queued packet to destination " << dst << endl;
   QueueEntry queueEntry;
   if (m_queue.Dequeue (dst,queueEntry))
     {

@@ -66,6 +66,7 @@ public:
    * \param vx
    * \param vy
    * \param vz
+   * \param sign
    * \param timestamp
    * 
    * \param dev the net device
@@ -79,7 +80,7 @@ public:
    * \param changedEntries flag for changed entries
    */
   RoutingTableEntry (uint16_t x = 0, uint16_t y = 0, uint16_t z = 0,
-                      int16_t vx = 0, int16_t vy = 0, int16_t vz = 0,
+                      int16_t vx = 0, int16_t vy = 0, int16_t vz = 0, uint16_t sign = 0,
                       uint16_t timestamp = 0, Ptr<NetDevice> dev = 0, Ipv4Address dst = Ipv4Address (), uint32_t seqNo = 0,
                      Ipv4InterfaceAddress iface = Ipv4InterfaceAddress (), uint32_t hops = 0, Ipv4Address nextHop = Ipv4Address (),
                      Time lifetime = Simulator::Now (), Time SettlingTime = Simulator::Now (), bool changedEntries = false);
@@ -104,6 +105,9 @@ public:
 
   void SetVZ(int16_t vz){ m_vz = vz;}
   int16_t GetVZ() const{ return m_vz;}
+
+  void SetSign(int16_t sign){ m_sign = sign;}
+  int16_t GetSign() const{ return m_sign;}
 
   void SetTimestamp(uint16_t timestamp){ m_timestamp = timestamp;}
   uint16_t GetTimestamp() const{ return m_timestamp;}
@@ -326,6 +330,7 @@ private:
   int16_t m_vx;
   int16_t m_vy;
   int16_t m_vz;
+  uint16_t m_sign;
   uint16_t m_timestamp;
 
   // Fields
@@ -377,30 +382,6 @@ public:
    */
   bool
   AddRoute (RoutingTableEntry & r);
-
-  
-  // //ADD: 以下四个功能函数分别对destination和nexthop的操作为：
-  // //10.1.1.x  10.1.1.y
-  // RoutingTableEntry fun1(RoutingTableEntry & r); // +1 +1
-  // RoutingTableEntry fun2(RoutingTableEntry & r); // +1 不变
-  // RoutingTableEntry fun3(RoutingTableEntry & r); // 不变 +1
-
-  // //10.1.1.x  10.2.2.y
-  // RoutingTableEntry fun4(RoutingTableEntry & r); // 不变 -1
-  // RoutingTableEntry fun5(RoutingTableEntry & r); // +1 -1
-  // RoutingTableEntry fun6(RoutingTableEntry & r); // +1 不变
-
-  // //10.2.2.x  10.1.1.y
-  // RoutingTableEntry fun7(RoutingTableEntry & r); // 不变 +1
-  // RoutingTableEntry fun8(RoutingTableEntry & r); // -1 不变
-  // RoutingTableEntry fun9(RoutingTableEntry & r); // -1 +1
-
-  // //10.2.2.x  10.2.2.y
-  // RoutingTableEntry fun10(RoutingTableEntry & r); // -1 -1
-  // RoutingTableEntry fun11(RoutingTableEntry & r); // -1 不变
-  // RoutingTableEntry fun12(RoutingTableEntry & r); // 不变 -1
-  
-
 
   /**
    * Delete routing table entry with destination address dst, if it exists.

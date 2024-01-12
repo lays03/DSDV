@@ -71,11 +71,30 @@ public:
 
 // //ADD: 新增一个函数，函数功能是：当查找的下一跳为10.1.1.x时，如果找不到，可以再去尝试查找下一跳为10.2.2.x的路由条目
 // //反之，当查找的下一跳为10.2.2.x时，如果找不到，可以再去尝试查找下一跳为10.1.1.x的路由条目
-// Ipv4Address
-// RoutingProtocol::Ipv4Address_Trans(Ipv4Address ip){
-//    Ipv4Address newip;
-//   return newip;
-// }
+//ADD: 新增一个函数，函数功能是：将Ip地址在10.1.1.x和10.2.2.x之间转换
+Ipv4Address Trans(Ipv4Address ip){
+  // 将IPv4地址转换为整数
+  uint32_t dstAsInteger = ip.Get();
+  // 获取IPv4地址的第二部分（子网标识）
+  uint32_t ip_secondPart = (dstAsInteger >> 8) & 0xFF;
+  // 获取IPv4地址的第三部分（子网标识）
+  uint32_t ip_thirdPart = (dstAsInteger >> 16) & 0xFF;
+
+  //把传进来的ip的第二、三字段加1或者减一
+  if(ip_secondPart == 1){
+    ip_secondPart += 1;
+    ip_thirdPart += 1;
+  }
+  else{
+    ip_secondPart -= 1;
+    ip_thirdPart -= 1;
+  }
+  
+  //拼成新的地址
+  uint32_t newipAsInteger = (dstAsInteger & 0xFF0000FF) | ((ip_secondPart & 0xFF) << 8) | ((ip_thirdPart & 0xFF) << 16);
+  Ipv4Address newip(newipAsInteger);
+  return newip;
+}
 
   //ADD: 添加函数，从数据包中获得正确的带方向的速度，用于更新路由表
   //ADD: 转换速度符号的两个函数，sign用来记录速度是否为负数，
